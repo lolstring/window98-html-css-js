@@ -2,6 +2,8 @@
 
 This project was created to push myself in HTML and CSS3 and to learn more in depth jQuery and Babel ES6.
 
+I have adapted this as my personal website on https://rahul.io. Check it out.
+
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
