@@ -11,7 +11,9 @@ These instructions will get you a copy of the project up and running on your loc
 ### Building
 
 ```
-npm install 
+npm install
+npm install -g bower
+bower install
 ```
 
 ### Running
@@ -49,3 +51,4 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 * [Wolf3d](https://github.com/jseidelin/wolf3d) -The Wolf3d game
 * [ClippyJS](https://github.com/smore-inc/clippy.js) - ClippyJS 
 * [Winamp2](https://github.com/captbaritone/winamp2-js) - WinampJS 
+* [Minesweeper](http://www.freeminesweeper.org/) - Minesweeper
