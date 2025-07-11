@@ -1,3 +1,4 @@
+@use './context-menu.scss';
 //Variables
 $teal: teal;
 $icon-width: 100px;
@@ -727,21 +728,6 @@ input[type="text"] {
     }
     .toolbar .b-right {
         background-image: url(../images/Word%20Images/right.bmp);
-    }
-    .toolbar .b-ol {
-        background-image: url(../images/Word%20Images/ol.bmp);
-    }
-    .toolbar .b-ul {
-        background-image: url(../images/Word%20Images/ul.bmp);
-    }
-    .toolbar .b-share {
-        background-image: url(../images/Word%20Images/share.bmp);
-    }
-    .toolbar .b-tweet {
-        background-image: url(../images/Word%20Images/tweet.bmp);
-    }
-    .toolbar .b-fork {
-        background-image: url(../images/Word%20Images/fork.bmp);
     }
     .toolbar .b-number {
         background-image: url(../images/Word%20Images/number.bmp);
@@ -2046,7 +2032,7 @@ input[type="text"] {
 }
 
 //---Winamp ---//
-#winamp2-js {
+#webamp {
     //height: 116px;
     //width: 275px;
     outline: none;
@@ -2056,7 +2042,7 @@ input[type="text"] {
     left:500;*/
 }
 
-#winamp2-js input[type=range] {
+#webamp input[type=range] {
     -webkit-appearance: none;
     margin: 0;
     padding: 0;
@@ -2064,33 +2050,33 @@ input[type="text"] {
     border: none;
 }
 
-#winamp2-js input[type=range]::-webkit-slider-thumb {
+#webamp input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
     border: none;
     border-radius: 0;
     background: none;
 }
 
-#winamp2-js input[type=range]::-moz-range-thumb {
+#webamp input[type=range]::-moz-range-thumb {
     border: none;
     border-radius: 0;
     background: none;
 }
 
-#winamp2-js input[type=range]::-moz-range-track {
+#webamp input[type=range]::-moz-range-track {
     border: none;
     background: none;
 }
 
-#winamp2-js input[type=range]:focus {
+#webamp input[type=range]:focus {
     outline: none;
 }
 
-#winamp2-js input[type=range]::-moz-focus-outer {
+#webamp input[type=range]::-moz-focus-outer {
     border: 0;
 }
 
-#winamp2-js a:focus {
+#webamp a:focus {
     outline: none;
 }
 
@@ -2131,10 +2117,10 @@ input[type="text"] {
     text-indent: -9999px;
 }
 
-#winamp2-js .window {
-    position: absolute;
-    cursor: url('../cursors/MAINMENU.PNG'), auto;
-}
+// #winamp2-js .window {
+//     position: absolute;
+//     cursor: url('../cursors/MAINMENU.PNG'), auto;
+// }
 
 //---Task Bar ---//
 #taskbar {
@@ -2506,4 +2492,243 @@ input[type="text"] {
     border-shadow: 1px 1px black;
     height: 40px;
     background-color: #c0c0c0;
+}
+
+/* Context menu overrides */
+@charset "UTF-8"; /*!
+ * jQuery contextMenu - Plugin for simple contextMenu handling
+ *
+ * Version: v2.2.4-dev
+ *
+ * Authors: Björn Brala (SWIS.nl), Rodney Rehm, Addy Osmani (patches for FF)
+ * Web: http://swisnl.github.io/jQuery-contextMenu/
+ *
+ * Copyright (c) 2011-2016 SWIS BV and contributors
+ *
+ * Licensed under
+ *   MIT License http://www.opensource.org/licenses/mit-license
+ *
+ * Date: 2016-08-24T12:51:52.134Z
+ */
+@font-face {
+    font-family: context-menu-icons;
+    font-style: normal;
+    font-weight: 400;
+    src: url(font/context-menu-icons.eot?14l1a);
+    src: url(font/context-menu-icons.eot?14l1a#iefix) format("embedded-opentype"),url(font/context-menu-icons.woff2?14l1a) format("woff2"),url(font/context-menu-icons.woff?14l1a) format("woff"),url(font/context-menu-icons.ttf?14l1a) format("truetype")
+}
+
+.context-menu-icon-add:before {
+    content: "\EA01"
+}
+
+.context-menu-icon-copy:before {
+    content: "\EA02"
+}
+
+.context-menu-icon-cut:before {
+    content: "\EA03"
+}
+
+.context-menu-icon-delete:before {
+    content: "\EA04"
+}
+
+.context-menu-icon-edit:before {
+    content: "\EA05"
+}
+
+.context-menu-icon-paste:before {
+    content: "\EA06"
+}
+
+.context-menu-icon-quit:before {
+    content: "\EA07"
+}
+
+.context-menu-icon:before {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 28px;
+    font-family: context-menu-icons;
+    font-size: 28px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1;
+    color: #2980b9;
+    text-align: center;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    -o-transform: translateY(-50%);
+    transform: translateY(-50%);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale
+}
+
+.context-menu-icon.context-menu-hover:before {
+    color: #fff
+}
+
+.context-menu-icon.context-menu-disabled:before {
+    color: #d5d5d5
+}
+
+.context-menu-icon.context-menu-icon--fa {
+    display: list-item
+}
+
+.context-menu-icon.context-menu-icon--fa:before {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 28px;
+    font-family: FontAwesome;
+    font-size: 28px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1;
+    color: #2980b9;
+    text-align: center;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    -o-transform: translateY(-50%);
+    transform: translateY(-50%);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale
+}
+
+.context-menu-icon.context-menu-icon--fa.context-menu-hover:before {
+    color: #fff
+}
+
+.context-menu-icon.context-menu-icon--fa.context-menu-disabled:before {
+    color: #d5d5d5
+}
+
+.context-menu-list {
+    position: absolute;
+    display: inline-block;
+    min-width: 119px;
+    max-width: 134px;
+    padding: 0 0 2px;
+    margin-left: 12px;
+    font-size: 12px;
+    list-style-type: none;
+    background: silver;
+    border: 1.8px outset #fff;
+    border-radius: 0;
+    -webkit-box-shadow: 1.5px 1.5px #000;
+    box-shadow: 1.5px 1.5px #000
+}
+
+.context-menu-item {
+    position: relative;
+    padding: 2px 18px 2px 28px;
+    color: #2f2f2f;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    background-color: silver
+}
+
+.context-menu-separator {
+    padding: 0;
+    margin: 3px 0;
+    border: 2px inset #fff
+}
+
+.context-menu-item>label>input,.context-menu-item>label>textarea {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text
+}
+
+.context-menu-item.context-menu-hover {
+    color: #fff;
+    cursor: default;
+    background-color: navy
+}
+
+.context-menu-item.context-menu-disabled {
+    color: grey;
+    text-shadow: 1px 1px #fff;
+    -webkit-background-clip: text;
+    background-clip: text
+}
+
+.context-menu-input.context-menu-hover {
+    cursor: default
+}
+
+.context-menu-submenu>.context-menu-list {
+    font-size: 1em
+}
+
+.context-menu-submenu:after {
+    position: absolute;
+    top: 50%;
+    right: 7px;
+    z-index: 1;
+    width: 0;
+    height: 0;
+    font-size: 14px;
+    content: '';
+    border-color: transparent transparent transparent #2f2f2f;
+    border-style: solid;
+    border-width: 3px 0 3px 3px;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    -o-transform: translateY(-50%);
+    transform: translateY(-50%)
+}
+
+.context-menu-item.context-menu-input {
+    padding: 4px 8px
+}
+
+.context-menu-input>label>* {
+    vertical-align: top
+}
+
+.context-menu-input>label>input[type=checkbox],.context-menu-input>label>input[type=radio] {
+    position: relative;
+    top: 1px;
+    margin-right: 5px
+}
+
+.context-menu-input>label {
+    margin: 0
+}
+
+.context-menu-input>label,.context-menu-input>label>input[type=text],.context-menu-input>label>select,.context-menu-input>label>textarea {
+    display: block;
+    width: 100%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box
+}
+
+.context-menu-input>label>textarea {
+    height: 98px
+}
+
+.context-menu-item>.context-menu-list {
+    top: 4px;
+    right: -4px;
+    display: none
+}
+
+.context-menu-item.context-menu-visible>.context-menu-list {
+    display: block
+}
+
+.context-menu-accesskey {
+    text-decoration: underline
+}
+
+.context-menu-bold {
+    font-weight: 700
 }

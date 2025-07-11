@@ -1013,3 +1013,7 @@ clippy.Queue.prototype = {
     }
 };
 
+
+window.clippy = clippy;
+
+export default clippy;

@@ -8,22 +8,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=0.5">
     <title>Desktop5</title>
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <!-- Place favicon.ico in the root directory -->
-    <!-- build:css styles/vendor.css -->
-    <!-- <link rel="stylesheet" href="styles/jquery-ui.css"> -->
-    <link rel="stylesheet" type="text/css" href="../bower_components/jQuery-contextMenu/dist/jquery.contextMenu.css" />
-    <link rel="stylesheet" type="text/css" href="vendor/clippy/build/clippy.css" media="all">
-    <!-- bower:css -->
-    <!-- endbower -->
-    <!-- endbuild -->
-    <!-- build:css styles/main.css -->
-    <!-- <link rel="stylesheet" href="styles/main.css"> -->
-    <!-- <link rel="stylesheet" href="styles/amain1.css"> -->
-    <link rel="stylesheet" href="styles/mod.css">
-    <!-- endbuild -->
-    <!-- build:js scripts/vendor/modernizr.js -->
-    <script src="bower_components/modernizr/modernizr.js"></script>
-    <!-- endbuild -->
+    <link rel="stylesheet" href="styles/jquery-ui.css">
+    <!-- mod.css will be injected by Webpack via JS import -->
+    <link rel="stylesheet" href="vendor/clippy/build/clippy.css" media="all">
+    <!-- Webpack will inject vendor and main JS bundles automatically -->
+    <!-- Modernizr: if you want to keep it, install via npm and import in your entry JS, or move to vendor/ and copy as static asset -->
 </head>
 
 <body>
@@ -39,8 +28,8 @@
                     <a class="button-3d close"><span>&nbsp;</span></a>
                 </div>
                 <span class="title">
-                        Welcome to Windows
-                    </span>
+                    Welcome to Windows
+                </span>
             </div>
             <div class="content-box">
                 <img class="icon" src="images/win98_icons/key_win_alt.ico" />
@@ -125,34 +114,47 @@
     <div id="desktop">
         <!--  <div id="follower"> </div> -->
         <div id="desktop-icons" style="margin:0;">
-            <div draggable="true" id="desktop-icon-1" class="desktop-icon disabled" program-name="explorer" directory="root" tabindex="0" style="background:url(images/win98_icons/computer_explorer.ico) no-repeat center top;">
+            <div draggable="true" id="desktop-icon-1" class="desktop-icon disabled" program-name="explorer"
+                directory="root" tabindex="0"
+                style="background:url(images/win98_icons/computer_explorer.ico) no-repeat center top;">
                 <p class="text"><span>My Computer</span></p>
             </div>
-            <div draggable="true" id="desktop-icon-2" class="desktop-icon disabled" program-name="explorer" directory="documents" tabindex="0" style="background:url(images/win98_icons/directory_open_file_mydocs.ico) no-repeat center top; top:64px">
+            <div draggable="true" id="desktop-icon-2" class="desktop-icon disabled" program-name="explorer"
+                directory="documents" tabindex="0"
+                style="background:url(images/win98_icons/directory_open_file_mydocs.ico) no-repeat center top; top:64px">
                 <p class="text"><span>My Documents</span></p>
             </div>
-            <div draggable="true" id="desktop-icon-3" class="desktop-icon" program-name="mail" tabindex="0" style="background:url(images/win98_icons/mail.ico) no-repeat center top; top:124px">
+            <div draggable="true" id="desktop-icon-3" class="desktop-icon" program-name="mail" tabindex="0"
+                style="background:url(images/win98_icons/mail.ico) no-repeat center top; top:124px">
                 <p class="text" style="text-align:center;"><span>Mail</span></p>
             </div>
-            <div draggable="true" id="desktop-icon-4" class="desktop-icon" program-name="msword" tabindex="0" style="background:url(images/win98_icons/WINWORD_1.ico) no-repeat center top; top:196px">
+            <div draggable="true" id="desktop-icon-4" class="desktop-icon" program-name="msword" tabindex="0"
+                style="background:url(images/win98_icons/WINWORD_1.ico) no-repeat center top; top:196px">
                 <p class="text"><span>Microsoft Word</span></p>
             </div>
-            <div draggable="true" id="desktop-icon-5" class="desktop-icon" program-name="notepad" tabindex="0" style="background:url(images/win98_icons/notepad.ico) no-repeat center top; top:256px">
+            <div draggable="true" id="desktop-icon-5" class="desktop-icon" program-name="notepad" tabindex="0"
+                style="background:url(images/win98_icons/notepad.ico) no-repeat center top; top:256px">
                 <p class="text"><span>Notepad</span></p>
             </div>
-            <div draggable="true" id="desktop-icon-6" class="desktop-icon" program-name="wolf-3d" tabindex="0" style="background:url(images/win98_icons/WOLF3D.ico) no-repeat center top; top:316px">
+            <div draggable="true" id="desktop-icon-6" class="desktop-icon" program-name="wolf-3d" tabindex="0"
+                style="background:url(images/win98_icons/WOLF3D.ico) no-repeat center top; top:316px">
                 <p class="text"><span>Wolf 3D</span></p>
             </div>
-            <div draggable="true" id="desktop-icon-7" class="desktop-icon" program-name="minesweeper" tabindex="0" style="background:url(images/win98_icons/minesweeper.ico) no-repeat center top; top:376px">
+            <div draggable="true" id="desktop-icon-7" class="desktop-icon" program-name="minesweeper" tabindex="0"
+                style="background:url(images/win98_icons/minesweeper.ico) no-repeat center top; top:376px">
                 <p class="text"><span>Minesweeper</span></p>
             </div>
-            <div draggable="true" id="desktop-icon-8" class="desktop-icon" program-name="winamp" tabindex="0" style="background:url(images/win98_icons/winamp.ico) no-repeat center top; top:436px">
+            <div draggable="true" id="desktop-icon-8" class="desktop-icon" program-name="winamp" tabindex="0"
+                style="background:url(images/win98_icons/winamp.ico) no-repeat center top; top:436px">
                 <p class="text"><span>Winamp</span></p>
             </div>
-             <div draggable="true" id="desktop-icon-9" class="desktop-icon" program-name="explorer" directory="Desktop/My Projects" tabindex="0" style="background:url(images/win98_icons/directory_closed.ico) no-repeat center top; top:64px">
+            <div draggable="true" id="desktop-icon-9" class="desktop-icon" program-name="explorer"
+                directory="Desktop/My Projects" tabindex="0"
+                style="background:url(images/win98_icons/directory_closed.ico) no-repeat center top; top:64px">
                 <p class="text"><span>My Projects</span></p>
             </div>
-            <div id="desktop-icon-99" class="desktop-icon" program-name="recyclebin" tabindex="0" style="background:url(images/win98_icons/recycle_bin_file.ico) no-repeat center top; right:0; left:auto;">
+            <div id="desktop-icon-99" class="desktop-icon" program-name="recyclebin" tabindex="0"
+                style="background:url(images/win98_icons/recycle_bin_file.ico) no-repeat center top; right:0; left:auto;">
                 <p class="text"><span>Destroy Session</span></p>
             </div>
         </div>
@@ -165,8 +167,8 @@
                         <a class="button-3d close"><span>&nbsp;</span></a>
                     </div>
                     <span class="title">
-                    Document Main - Microsoft Word
-                </span>
+                        Document Main - Microsoft Word
+                    </span>
                 </div>
                 <div class="menu-bar  h-count">
                     <a><span>F</span>ile</a>
@@ -199,19 +201,26 @@
                     <div class="clear"></div>
                 </div>
                 <div class="toolbar  float-left">
-                    <select class="selectPicker" data-cmd="formatBlock" style="background-position:96% 50%, 98% 50%; width:112px; overflow:hidden; text-overflow: ellipsis;">
+                    <select class="selectPicker" data-cmd="formatBlock"
+                        style="background-position:96% 50%, 98% 50%; width:112px; overflow:hidden; text-overflow: ellipsis;">
                         <option value="H1">
-                            <h1>Heading 1</h1></option>
+                            <h1>Heading 1</h1>
+                        </option>
                         <option value="H2">
-                            <h2>Heading 2</h2></option>
+                            <h2>Heading 2</h2>
+                        </option>
                         <option value="H3">
-                            <h3>Heading 3</h3></option>
-                        <option value="div"><pre>Normal</pre></option>
+                            <h3>Heading 3</h3>
+                        </option>
+                        <option value="div">
+                            <pre>Normal</pre>
+                        </option>
                         <option selected value="P">
                             <p>Default Paragraph Font</p>
                         </option>
                     </select>
-                    <select class="selectPicker" id="font" data-cmd="fontName" style="width:168px; overflow:hidden; text-overflow: ellipsis;">
+                    <select class="selectPicker" id="font" data-cmd="fontName"
+                        style="width:168px; overflow:hidden; text-overflow: ellipsis;">
                         <option value="Arial" selected>Arial</option>
                         <option value="Georgia">Georgia</option>
                         <option value="Times New Roman">Times New Roman</option>
@@ -225,7 +234,8 @@
                         <option value="Courier New">Courier New</option>
                         <option value="Lucida Console">Lucida Console</option>
                     </select>
-                    <select class="selectPicker" id="fontSize" style="background-position:92% 50%, 95% 50%; width:64px; overflow:hidden;text-overflow: ellipsis;">
+                    <select class="selectPicker" id="fontSize"
+                        style="background-position:92% 50%, 95% 50%; width:64px; overflow:hidden;text-overflow: ellipsis;">
                         <option value="8">8</option>
                         <option value="9">9</option>
                         <option value="10">10</option>
@@ -284,7 +294,9 @@
                         <div class="color-picker" style="position:fixed; background:#c0c0c0; z-index:99; display:none;">
                             <table>
                                 <tr>
-                                    <td colspan="8" style="padding:3px"><a style="background:none; border:1px solid; width:100%; height:100%; text-align:center; vertical-align:middle;font-size:0.757em">None</a></td>
+                                    <td colspan="8" style="padding:3px"><a
+                                            style="background:none; border:1px solid; width:100%; height:100%; text-align:center; vertical-align:middle;font-size:0.757em">None</a>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td>
@@ -315,7 +327,9 @@
                         <div class="color-picker" style="position:fixed; background:#c0c0c0; z-index:99; display:none;">
                             <table>
                                 <tr>
-                                    <td colspan="8" style="padding:3px"><a style="background:black;background-size:10px,10px; border:1px solid; width:100%; height:100%; text-align:center; vertical-align:middle;font-size:10px">Automatic</a></td>
+                                    <td colspan="8" style="padding:3px"><a
+                                            style="background:black;background-size:10px,10px; border:1px solid; width:100%; height:100%; text-align:center; vertical-align:middle;font-size:10px">Automatic</a>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td>
@@ -355,7 +369,17 @@
                             <div class="document-content">
                                 <div class="document container">
                                     <div class="document-wrap" contenteditable="true">
-                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec faucibus libero sem, eu viverra est ornare vitae. Curabitur a luctus nunc, gravida tincidunt sem. Duis luctus condimentum orci, nec convallis felis tempus sed. Suspendisse potenti. Curabitur metus velit, porta ac pellentesque vel, imperdiet at tortor. Aliquam vitae lacinia velit. Sed quis ipsum laoreet, convallis dui et, placerat enim. Donec vel neque mattis, finibus urna nec, mattis diam. Suspendisse suscipit nibh in eleifend dapibus. Etiam sed enim in diam rutrum aliquet a nec massa. Proin viverra neque sit amet massa sollicitudin porta. Donec quis convallis nisl, ut aliquam mauris. Aliquam accumsan enim in eros fringilla laoreet. Mauris leo felis, cursus quis accumsan et, finibus ac augue. Maecenas volutpat blandit ex, quis sollicitudin purus consectetur tempor.
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec faucibus libero
+                                        sem, eu viverra est ornare vitae. Curabitur a luctus nunc, gravida tincidunt
+                                        sem. Duis luctus condimentum orci, nec convallis felis tempus sed. Suspendisse
+                                        potenti. Curabitur metus velit, porta ac pellentesque vel, imperdiet at tortor.
+                                        Aliquam vitae lacinia velit. Sed quis ipsum laoreet, convallis dui et, placerat
+                                        enim. Donec vel neque mattis, finibus urna nec, mattis diam. Suspendisse
+                                        suscipit nibh in eleifend dapibus. Etiam sed enim in diam rutrum aliquet a nec
+                                        massa. Proin viverra neque sit amet massa sollicitudin porta. Donec quis
+                                        convallis nisl, ut aliquam mauris. Aliquam accumsan enim in eros fringilla
+                                        laoreet. Mauris leo felis, cursus quis accumsan et, finibus ac augue. Maecenas
+                                        volutpat blandit ex, quis sollicitudin purus consectetur tempor.
                                         <div class="clear"></div>
                                     </div>
                                 </div>
@@ -366,33 +390,33 @@
                 <div class="status-bar  h-count" id="status-bar-1">
                     <div class="status-bar-content">
                         <span class="box">
-                        Page 1
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                        Sec 1
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                        1/1
-                        &nbsp;&nbsp;&nbsp;&nbsp;
-                    </span>
+                            Page 1
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            Sec 1
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            1/1
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                        </span>
                         <span class="box">
-                        At 1"
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                        Ln 1
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                        Col 1
-                        &nbsp;&nbsp;&nbsp;&nbsp;
-                    </span>
+                            At 1"
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            Ln 1
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            Col 1
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                        </span>
                         <span class="box disabled">
-                        REC
-                    </span>
+                            REC
+                        </span>
                         <span class="box disabled">
-                        TRK
-                    </span>
+                            TRK
+                        </span>
                         <span class="box disabled">
-                        EXT
-                    </span>
+                            EXT
+                        </span>
                         <span class="box disabled">
-                        OVR
-                    </span>
+                            OVR
+                        </span>
                     </div>
                 </div>
             </div>
@@ -404,14 +428,15 @@
                             <a class="button-3d close-save"><span>&nbsp;</span></a>
                         </div>
                         <span class="title">
-                        Open
-                    </span>
+                            Open
+                        </span>
                     </div>
                     <div class="open-content">
                         <div class="top-bar">
                             <a><span>Look in: </span></a>
                             <!--<div class="picker"><span class="arrow"></span><img class="icon" src="images/win98_icons/desktop.ico"/><span>Desktop</span></div>-->
-                            <select id="save-location" class="picker select" style="margin:3px 4px 3px 11px; width:180px; ">
+                            <select id="save-location" class="picker select"
+                                style="margin:3px 4px 3px 11px; width:180px; ">
                                 <option disabled selected value="desktop">Desktop</option>
                             </select>
                             <!--<div class="picker ui-widget">
@@ -425,9 +450,15 @@
                         </div>
                         <div class="folders">
                             <div class="content1-box">
-                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/computer_explorer.ico" style="width:14px;" /><span style="vertical-align:top">My Computer</span></div>
-                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/directory_open_file_mydocs.ico" style="width:14px;" /><span style="vertical-align:top">My Documents</span></div>
-                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/network_normal_two_pcs.ico" style="width:14px;" /><span style="vertical-align:top">Network Neighbourhood</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/computer_explorer.ico" style="width:14px;" /><span
+                                        style="vertical-align:top">My Computer</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/directory_open_file_mydocs.ico"
+                                        style="width:14px;" /><span style="vertical-align:top">My Documents</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/network_normal_two_pcs.ico" style="width:14px;" /><span
+                                        style="vertical-align:top">Network Neighbourhood</span></div>
                             </div>
                         </div>
                         <div class="bottom-bar">
@@ -465,7 +496,8 @@
                         <div class="top-bar">
                             <a><span>Save in:</span></a>
                             <!--<div class="picker"><span class="arrow"></span><img class="icon" src="images/win98_icons/desktop.ico"/><span>Desktop</span></div>-->
-                            <select id="save-location" class="picker select" style="margin:3px 4px 3px 11px; width:180px; ">
+                            <select id="save-location" class="picker select"
+                                style="margin:3px 4px 3px 11px; width:180px; ">
                                 <option disabled selected value="none"></option>
                                 <option value="desktop">Desktop</option>
                                 <option value="computer">My Computer(Download)</option>
@@ -481,9 +513,15 @@
                         </div>
                         <div class="folders">
                             <div class="content1-box">
-                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/computer_explorer.ico" style="width:14px;" /><span style="vertical-align:top">My Computer</span></div>
-                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/directory_open_file_mydocs.ico" style="width:14px;" /><span style="vertical-align:top">My Documents</span></div>
-                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/network_normal_two_pcs.ico" style="width:14px;" /><span style="vertical-align:top">Network Neighbourhood</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/computer_explorer.ico" style="width:14px;" /><span
+                                        style="vertical-align:top">My Computer</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/directory_open_file_mydocs.ico"
+                                        style="width:14px;" /><span style="vertical-align:top">My Documents</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/network_normal_two_pcs.ico" style="width:14px;" /><span
+                                        style="vertical-align:top">Network Neighbourhood</span></div>
                             </div>
                             <div class="bottom-bar">
                                 <p class="text">File Name:</p>
@@ -492,7 +530,8 @@
                             </div>
                             <div class="bottom-bar">
                                 <p class="text">Save as type:</p>
-                                <select id="file-type" class="picker select" style="margin:9px 4px 9px 11px; width:200px; ">
+                                <select id="file-type" class="picker select"
+                                    style="margin:9px 4px 9px 11px; width:200px; ">
                                     <option value="pdf">PDF</option>
                                     <option value="doc">Word</option>
                                     <option value="txt">Text Document</option>
@@ -504,7 +543,8 @@
                 </div>
             </div>
         </div>
-        <div id="notepad-99" class="notepad window ui-widget-content" program-name="notepad" pid="99999997" style="display:none;">
+        <div id="notepad-99" class="notepad window ui-widget-content" program-name="notepad" pid="99999997"
+            style="display:none;">
             <div class="window-border">
                 <div class="title-bar  h-count" id="parent">
                     <div class="control-box">
@@ -513,8 +553,8 @@
                         <a class="button-3d close"><span>&nbsp;</span></a>
                     </div>
                     <span class="title">
-                            Main - Notepad
-                        </span>
+                        Main - Notepad
+                    </span>
                 </div>
                 <div class="menu-bar  h-count">
                     <a><span>F</span>ile</a>
@@ -530,7 +570,17 @@
                             <div class="document-content">
                                 <div class="document container">
                                     <div class="document-wrap" contenteditable="true">
-                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec faucibus libero sem, eu viverra est ornare vitae. Curabitur a luctus nunc, gravida tincidunt sem. Duis luctus condimentum orci, nec convallis felis tempus sed. Suspendisse potenti. Curabitur metus velit, porta ac pellentesque vel, imperdiet at tortor. Aliquam vitae lacinia velit. Sed quis ipsum laoreet, convallis dui et, placerat enim. Donec vel neque mattis, finibus urna nec, mattis diam. Suspendisse suscipit nibh in eleifend dapibus. Etiam sed enim in diam rutrum aliquet a nec massa. Proin viverra neque sit amet massa sollicitudin porta. Donec quis convallis nisl, ut aliquam mauris. Aliquam accumsan enim in eros fringilla laoreet. Mauris leo felis, cursus quis accumsan et, finibus ac augue. Maecenas volutpat blandit ex, quis sollicitudin purus consectetur tempor.
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec faucibus libero
+                                        sem, eu viverra est ornare vitae. Curabitur a luctus nunc, gravida tincidunt
+                                        sem. Duis luctus condimentum orci, nec convallis felis tempus sed. Suspendisse
+                                        potenti. Curabitur metus velit, porta ac pellentesque vel, imperdiet at tortor.
+                                        Aliquam vitae lacinia velit. Sed quis ipsum laoreet, convallis dui et, placerat
+                                        enim. Donec vel neque mattis, finibus urna nec, mattis diam. Suspendisse
+                                        suscipit nibh in eleifend dapibus. Etiam sed enim in diam rutrum aliquet a nec
+                                        massa. Proin viverra neque sit amet massa sollicitudin porta. Donec quis
+                                        convallis nisl, ut aliquam mauris. Aliquam accumsan enim in eros fringilla
+                                        laoreet. Mauris leo felis, cursus quis accumsan et, finibus ac augue. Maecenas
+                                        volutpat blandit ex, quis sollicitudin purus consectetur tempor.
                                         <div class="clear"></div>
                                     </div>
                                 </div>
@@ -547,14 +597,15 @@
                             <a class="button-3d close-save"><span>&nbsp;</span></a>
                         </div>
                         <span class="title">
-                                Open
-                            </span>
+                            Open
+                        </span>
                     </div>
                     <div class="open-content">
                         <div class="top-bar">
                             <a><span>Look in: </span></a>
                             <!--<div class="picker"><span class="arrow"></span><img class="icon" src="images/win98_icons/desktop.ico"/><span>Desktop</span></div>-->
-                            <select id="save-location" class="picker select" style="margin:3px 4px 3px 12px; width:180px; ">
+                            <select id="save-location" class="picker select"
+                                style="margin:3px 4px 3px 12px; width:180px; ">
                                 <option disabled selected value="desktop">Desktop</option>
                                 <!--<option value="both">Download and Save</option>-->
                             </select>
@@ -569,9 +620,15 @@
                         </div>
                         <div class="folders">
                             <div class="content1-box">
-                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/computer_explorer.ico" style="width:14px;" /><span style="vertical-align:top">My Computer</span></div>
-                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/directory_open_file_mydocs.ico" style="width:14px;" /><span style="vertical-align:top">My Documents</span></div>
-                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/network_normal_two_pcs.ico" style="width:14px;" /><span style="vertical-align:top">Network Neighbourhood</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/computer_explorer.ico" style="width:14px;" /><span
+                                        style="vertical-align:top">My Computer</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/directory_open_file_mydocs.ico"
+                                        style="width:14px;" /><span style="vertical-align:top">My Documents</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/network_normal_two_pcs.ico" style="width:14px;" /><span
+                                        style="vertical-align:top">Network Neighbourhood</span></div>
                             </div>
                         </div>
                         <div class="bottom-bar">
@@ -584,7 +641,8 @@
                                 </div>-->
                         <div class="bottom-bar">
                             <p class="text">File of type:</p>
-                            <select id="file-type" class="picker select" style="margin:0px 4px 10px 15px; width:230px; ">
+                            <select id="file-type" class="picker select"
+                                style="margin:0px 4px 10px 15px; width:230px; ">
                                 <option value="pdf">PDF</option>
                                 <option value="doc">Word</option>
                                 <option value="txt">Text Document</option>
@@ -603,14 +661,15 @@
                             <a class="button-3d close-save"><span>&nbsp;</span></a>
                         </div>
                         <span class="title">
-                                    Save
-                                </span>
+                            Save
+                        </span>
                     </div>
                     <div class="save-content">
                         <div class="top-bar">
                             <a><span>Save in:</span></a>
                             <!--<div class="picker"><span class="arrow"></span><img class="icon" src="images/win98_icons/desktop.ico"/><span>Desktop</span></div>-->
-                            <select id="save-location" class="picker select" style="margin:3px 4px 3px 12px; width:180px; ">
+                            <select id="save-location" class="picker select"
+                                style="margin:3px 4px 3px 12px; width:180px; ">
                                 <option disabled selected value="none"></option>
                                 <option value="desktop">Desktop</option>
                                 <option value="computer">My Computer(Download)</option>
@@ -627,9 +686,15 @@
                         </div>
                         <div class="folders">
                             <div class="content1-box">
-                                <div program-name="explorer" directory="root" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/computer_explorer.ico" style="width:14px;" /><span style="vertical-align:top">My Computer</span></div>
-                                <div program-name="explorer" directory="documents" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/directory_open_file_mydocs.ico" style="width:14px;" /><span style="vertical-align:top">My Documents</span></div>
-                                <div class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/network_normal_two_pcs.ico" style="width:14px;" /><span style="vertical-align:top">Network Neighbourhood</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/computer_explorer.ico" style="width:14px;" /><span
+                                        style="vertical-align:top">My Computer</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/directory_open_file_mydocs.ico"
+                                        style="width:14px;" /><span style="vertical-align:top">My Documents</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/network_normal_two_pcs.ico" style="width:14px;" /><span
+                                        style="vertical-align:top">Network Neighbourhood</span></div>
                             </div>
                         </div>
                         <div class="bottom-bar">
@@ -642,7 +707,8 @@
                                     </div>-->
                         <div class="bottom-bar">
                             <p class="text">Save as type:</p>
-                            <select id="file-type" class="picker select" style="margin:0px 4px 10px 15px; width:230px; ">
+                            <select id="file-type" class="picker select"
+                                style="margin:0px 4px 10px 15px; width:230px; ">
                                 <option value="pdf">PDF</option>
                                 <option value="doc">Word</option>
                                 <option value="txt">Text Document</option>
@@ -719,8 +785,8 @@
                         <a class="button-3d close"><span>&nbsp;</span></a>
                     </div>
                     <span class="title">
-                                    Mail Client
-                                </span>
+                        Mail Client
+                    </span>
                 </div>
                 <div class="top">
                     <div class="menu-bar  h-count">
@@ -729,7 +795,7 @@
                         <a><span>E</span>dit</a>
                         <a><span>V</span>iew</a>
                         <a><span>I</span>nsert</a>
-                        <a>F<span>o</span>ormat</a>
+                        <a>F<span>o</span>rmat</a>
                         <a><span>T</span>ools</a>
                         <a><span>M</span>essage</a>
                         <a><span>H</span>elp</a>
@@ -765,31 +831,41 @@
                     <div class="middle-bar">
                         <p class="attachment">Attach:&nbsp;&nbsp;</p>
                         <div class="attachment">
-                            <div id="my-computer" class="attached-list" fileID><img class="icon" src="images/win98_icons/computer_explorer.ico" /><span>My Computer</span>
+                            <div id="my-computer" class="attached-list" fileID><img class="icon"
+                                    src="images/win98_icons/computer_explorer.ico" /><span>My Computer</span>
                                 <div class="cancel">&nbsp;</div>
                             </div>
-                            <div id="my-computer" class="attached-list"><img class="icon" src="images/win98_icons/computer_explorer.ico" /><span>My Computer</span>
+                            <div id="my-computer" class="attached-list"><img class="icon"
+                                    src="images/win98_icons/computer_explorer.ico" /><span>My Computer</span>
                                 <div class="cancel">&nbsp;</div>
                             </div>
-                            <div id="my-computer" class="attached-list"><img class="icon" src="images/win98_icons/computer_explorer.ico" /><span>My Computer</span>
+                            <div id="my-computer" class="attached-list"><img class="icon"
+                                    src="images/win98_icons/computer_explorer.ico" /><span>My Computer</span>
                                 <div class="cancel">&nbsp;</div>
                             </div>
                         </div>
                     </div>
                     <div class="toolbar">
-                        <select class="selectPicker" data-cmd="formatBlock" style="background-position:96% 50%, 98% 50%; width:8em; overflow:hidden; text-overflow: ellipsis;">
+                        <select class="selectPicker" data-cmd="formatBlock"
+                            style="background-position:96% 50%, 98% 50%; width:8em; overflow:hidden; text-overflow: ellipsis;">
                             <option value="H1">
-                                <h1>Heading 1</h1></option>
+                                <h1>Heading 1</h1>
+                            </option>
                             <option value="H2">
-                                <h2>Heading 2</h2></option>
+                                <h2>Heading 2</h2>
+                            </option>
                             <option value="H3">
-                                <h3>Heading 3</h3></option>
-                            <option value="div"><pre>Normal</pre></option>
+                                <h3>Heading 3</h3>
+                            </option>
+                            <option value="div">
+                                <pre>Normal</pre>
+                            </option>
                             <option selected value="P">
                                 <p>Default Paragraph Font</p>
                             </option>
                         </select>
-                        <select class="selectPicker" id="font" data-cmd="fontName" style="width:12em; overflow:hidden; text-overflow: ellipsis;">
+                        <select class="selectPicker" id="font" data-cmd="fontName"
+                            style="width:12em; overflow:hidden; text-overflow: ellipsis;">
                             <option value="Arial" selected>Arial</option>
                             <option value="Georgia">Georgia</option>
                             <option value="Times New Roman">Times New Roman</option>
@@ -803,7 +879,8 @@
                             <option value="Courier New">Courier New</option>
                             <option value="Lucida Console">Lucida Console</option>
                         </select>
-                        <select class="selectPicker" id="fontSize" style="background-position:92% 50%, 95% 50%; width:4.5em; overflow:hidden;text-overflow: ellipsis;">
+                        <select class="selectPicker" id="fontSize"
+                            style="background-position:92% 50%, 95% 50%; width:4.5em; overflow:hidden;text-overflow: ellipsis;">
                             <option value="8">8</option>
                             <option value="9">9</option>
                             <option value="10">10</option>
@@ -857,7 +934,8 @@
                         <div class="top-bar">
                             <a><span>Look in: </span></a>
                             <!--<div class="picker"><span class="arrow"></span><img class="icon" src="images/win98_icons/desktop.ico"/><span>Desktop</span></div>-->
-                            <select id="save-location" class="picker select" style="margin:3px 4px 3px 11px; width:180px; ">
+                            <select id="save-location" class="picker select"
+                                style="margin:3px 4px 3px 11px; width:180px; ">
                                 <option disabled selected value="desktop">Desktop</option>
                                 <!--<option value="both">Download and Save</option>-->
                             </select>
@@ -872,9 +950,15 @@
                         </div>
                         <div class="folders">
                             <div class="content1-box">
-                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/computer_explorer.ico" style="width:14px;" /><span style="vertical-align:top">My Computer</span></div>
-                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/directory_open_file_mydocs.ico" style="width:14px;" /><span style="vertical-align:top">My Documents</span></div>
-                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon" src="images/win98_icons/network_normal_two_pcs.ico" style="width:14px;" /><span style="vertical-align:top">Network Neighbourhood</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/computer_explorer.ico" style="width:14px;" /><span
+                                        style="vertical-align:top">My Computer</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/directory_open_file_mydocs.ico"
+                                        style="width:14px;" /><span style="vertical-align:top">My Documents</span></div>
+                                <div id="my-computer" class="folder-list" style="left:0px;"><img class="icon"
+                                        src="images/win98_icons/network_normal_two_pcs.ico" style="width:14px;" /><span
+                                        style="vertical-align:top">Network Neighbourhood</span></div>
                             </div>
                         </div>
                         <div class="bottom-bar">
@@ -907,13 +991,14 @@
                         <a class="button-3d close-run"><span>&nbsp;</span></a>
                     </div>
                     <span class="title">
-                            Run
-                        </span>
+                        Run
+                    </span>
                 </div>
                 <div class="run-content">
                     <div class="top">
                         <img src="images/win98_icons/application_hourglass.ico" />
-                        <p>Type the name of a program, folder, document, or Internet resource, and Windows will open it for you.</p>
+                        <p>Type the name of a program, folder, document, or Internet resource, and Windows will open it
+                            for you.</p>
                     </div>
                     <div class="middle">
                         <p>Open:</p>
@@ -929,15 +1014,16 @@
                 </div>
             </div>
         </div>
-        <div id="properties-1" class="properties window ui-widget-content" program-name="properties" pid="99999998" style="display:none;">
+        <div id="properties-1" class="properties window ui-widget-content" program-name="properties" pid="99999998"
+            style="display:none;">
             <div class="window-border">
                 <div class="title-bar h-count" id="parent">
                     <div class="control-box">
                         <a class="button-3d close"><span>&nbsp;</span></a>
                     </div>
                     <span class="title">
-                            Properties
-                        </span>
+                        Properties
+                    </span>
                 </div>
                 <div class="properties-content">
                     <div class="tab">General</div>
@@ -1025,26 +1111,59 @@
         </div>
         <div id="start-menu">
             <span id="system-name">
-                    <div class="text">
-                        &nbsp;
-                        <b>Windows</b>98
+                <div class="text">
+                    &nbsp;
+                    <b>Windows</b>98
+                </div>
+            </span>
+            <span id="options">
+                <span id="func">
+                    <div class="menu-item disabled-action" id="menu-1" style="margin-top:1px"><img class="icon"
+                            src="images/win98_icons/windows_update_small.ico" />
+                        <div class="text">Windows Update</div><br>
+                    </div>
+                    <hr>
+                    <div class="menu-item" id="menu-2"><img class="icon"
+                            src="images/win98_icons/directory_program_group_small.ico" />
+                        <div class="text"><u>P</u>rograms<div class="bullet">&rtrif;</div>
+                        </div><br>
+                    </div>
+                    <div class="menu-item disabled-action" id="menu-3"><img class="icon"
+                            src="images/win98_icons/directory_favorites_small.ico" />
+                        <div class="text"><u>F</u>avourites<div class="bullet">&rtrif;</div>
+                        </div><br>
+                    </div>
+                    <div class="menu-item disabled-action" id="menu-4"><img class="icon"
+                            src="images/win98_icons/directory_open_cabinet.ico" />
+                        <div class="text"><u>D</u>ocuments<div class="bullet">&rtrif;</div>
+                        </div><br>
+                    </div>
+                    <div class="menu-item disabled-action" id="menu-5"><img class="icon"
+                            src="images/win98_icons/settings_gear.ico" />
+                        <div class="text"><u>S</u>ettings<div class="bullet">&rtrif;</div>
+                        </div><br>
+                    </div>
+                    <div class="menu-item disabled-action" id="menu-6"><img class="icon"
+                            src="images/win98_icons/search_file_2.ico" />
+                        <div class="text"><u>F</u>ind<div class="bullet">&rtrif;</div>
+                        </div><br>
+                    </div>
+                    <div class="menu-item disabled-action" id="menu-7"><img class="icon"
+                            src="images/win98_icons/help_book_small.ico" />
+                        <div class="text"><u>H</u>elp</div><br>
+                    </div>
+                    <div class="menu-item" id="menu-8"><img class="icon"
+                            src="images/win98_icons/application_hourglass_small.ico" />
+                        <div class="text"><u>R</u>un...</div><br>
+                    </div>
+                    <hr>
+                    <div class="menu-item" id="menu-9"><img class="icon" src="images/win98_icons/key_win.ico" />
+                        <div class="text"><u>L</u>og off Rahul...</div><br>
+                    </div>
+                    <div class="menu-item" id="menu-10"><img class="icon" src="images/win98_icons/shut_down_cool.ico" />
+                        <div class="text">Sh<u>u</u>t Down...</div><br>
                     </div>
                 </span>
-            <span id="options">
-                    <span id="func">
-                        <div class="menu-item disabled-action" id="menu-1" style="margin-top:1px"><img class="icon" src="images/win98_icons/windows_update_small.ico"/><div class="text">Windows Update</div><br></div>
-                        <hr>
-                        <div class="menu-item" id="menu-2"><img class="icon" src="images/win98_icons/directory_program_group_small.ico"/><div class="text"><u>P</u>rograms<div class="bullet">&rtrif;</div></div><br></div>
-                        <div class="menu-item disabled-action" id="menu-3"><img class="icon" src="images/win98_icons/directory_favorites_small.ico"/><div class="text"><u>F</u>avourites<div class="bullet">&rtrif;</div></div><br></div>
-                        <div class="menu-item disabled-action" id="menu-4"><img class="icon" src="images/win98_icons/directory_open_cabinet.ico"/><div class="text"><u>D</u>ocuments<div class="bullet">&rtrif;</div></div><br></div>
-                        <div class="menu-item disabled-action" id="menu-5"><img class="icon" src="images/win98_icons/settings_gear.ico"/><div class="text"><u>S</u>ettings<div class="bullet">&rtrif;</div></div><br></div>
-                        <div class="menu-item disabled-action" id="menu-6"><img class="icon" src="images/win98_icons/search_file_2.ico"/><div class="text"><u>F</u>ind<div class="bullet">&rtrif;</div></div><br></div>
-                        <div class="menu-item disabled-action" id="menu-7"><img class="icon" src="images/win98_icons/help_book_small.ico"/><div class="text"><u>H</u>elp</div><br></div>
-                        <div class="menu-item" id="menu-8"><img class="icon" src="images/win98_icons/application_hourglass_small.ico"/><div class="text"><u>R</u>un...</div><br></div>
-                        <hr>
-                        <div class="menu-item" id="menu-9"><img class="icon" src="images/win98_icons/key_win.ico"/><div class="text"><u>L</u>og off Rahul...</div><br></div>
-                        <div class="menu-item" id="menu-10"><img class="icon" src="images/win98_icons/shut_down_cool.ico"/><div class="text">Sh<u>u</u>t Down...</div><br></div>
-                    </span>
             </span>
         </div>
         <div id="sub-menu-2">
@@ -1085,20 +1204,27 @@
             </div>
         </div>
         <div id="taskbar">
-            <span id="start-button"><div id="inner-start-button"><img class="icon" src="images/win98_icons/windows.ico" style="width:20px; margin:-2px 0 0 0;"/><p class="text">&nbsp;Start</p></div></span>
+            <span id="start-button">
+                <div id="inner-start-button"><img class="icon" src="images/win98_icons/windows.ico"
+                        style="width:20px; margin:-2px 0 0 0;" />
+                    <p class="text">&nbsp;Start</p>
+                </div>
+            </span>
             <span class="bigpipe"></span>
             <span class="pipe"></span>
-            <span id="quick-launch"><img class="icon show-desktop" src="images/win98_icons/desktop.ico" style="margin:0px 1px 0px 1px;"/>
-                    <img class="icon new-mail" src="images/win98_icons/mail.ico" style="margin:0px 1px 0px 1px;" program-name="mail"/>
-                </span>
+            <span id="quick-launch"><img class="icon show-desktop" src="images/win98_icons/desktop.ico"
+                    style="margin:0px 1px 0px 1px;" />
+                <img class="icon new-mail" src="images/win98_icons/mail.ico" style="margin:0px 1px 0px 1px;"
+                    program-name="mail" />
+            </span>
             <span class="pipe"></span>
             <span class="bigpipe"></span>
             <span id="task">
-                    <!-- <span class="window-open"><img class="icon" src="images/win98_icons/hard_disk_drive.ico"/><p class="text">&nbsp;C:/</p></span>
+                <!-- <span class="window-open"><img class="icon" src="images/win98_icons/hard_disk_drive.ico"/><p class="text">&nbsp;C:/</p></span>
             <span class="window-open"><img class="icon" src="images/win98_icons/hard_disk_drive.ico"/><p class="text">&nbsp;(C:/)</p></span> -->
             </span>
             <span id="right">
-                    <div id="pagination" class="page" style="
+                <div id="pagination" class="page" style="
                         height: 2px;
                         vertical-align: baseline;
                         display: inline;
@@ -1110,12 +1236,13 @@
                         border: 1px solid black;
                         padding: 1px;
                         " usemap="#updown"><map name="updown" id="updown">
-                        <area id="pageup" alt="" title="" shape="poly" coords="0,0,0,8,16,8,16,0"/>
-                        <area id="pagedown" alt="" title="" shape="poly" coords="0,8,0,16,16,16,16,8"/></map>
-                            </div>
-                            <span class="bigpipe" style="/* right: 64px; */"></span><span id="clock"><span class="audio-button" style="margin:0px 1px 0px 1px; position:fixed; right:63px; bottom:5px; background-size:14px; ">&nbsp;</span>
-            <div class="text">6:34 PM</div>
-            </span>
+                        <area id="pageup" alt="" title="" shape="poly" coords="0,0,0,8,16,8,16,0" />
+                        <area id="pagedown" alt="" title="" shape="poly" coords="0,8,0,16,16,16,16,8" /></map>
+                </div>
+                <span class="bigpipe" style="/* right: 64px; */"></span><span id="clock"><span class="audio-button"
+                        style="margin:0px 1px 0px 1px; position:fixed; right:63px; bottom:5px; background-size:14px; ">&nbsp;</span>
+                    <div class="text">6:34 PM</div>
+                </span>
             </span>
         </div>
     </div>
@@ -1130,22 +1257,14 @@
             </script> -->
     <!-- build:js scripts/vendor.js -->
     <!-- bower:js -->
-    <script src="bower_components/howler.js/dist/howler.min.js"></script>
-    <script src="bower_components/jquery/dist/jquery.js"></script>
-    <script src="bower_components/jquery-ui/jquery-ui.js"></script>
-    <script src="bower_components/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js"></script>
-    <script type="text/javascript" src="vendor/Blob.js"></script>
-    <script type="text/javascript" src="vendor/xepOnline.jqPlugin.js"></script>
-    <script type="text/javascript" src="vendor/html-docx.js"></script>
-    <script type="text/javascript" src="vendor/FileSaver.js"></script>
-    <script type="text/javascript" src="../bower_components/jQuery-contextMenu/dist/jquery.contextMenu.js"></script>
-    <script src="vendor/clippy/build/clippy.js"></script>
-    <!--     <script src="scripts/jquery-mobile.js"></script> -->
     <!-- endbower -->
     <!-- endbuild -->
     <!-- build:js scripts/main.js -->
     <!--     <script src="scripts/mouse.js"></script> -->
-    <script src="scripts/es2015.js"></script>
+
+    <!-- <script src="scripts/vendor.js"></script> -->
+    <!-- <script src="scripts/main.bundle.js"></script> -->
+
     <!-- endbuild -->
 </body>
 
