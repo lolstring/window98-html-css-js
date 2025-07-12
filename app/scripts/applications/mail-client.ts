@@ -1,15 +1,14 @@
-export class MailClient {
-  constructor(processID) {
-    //this.fileID = fileID;
-    this.processID = processID;
+import { Application } from './application';
+import { MsWord } from './msword';
 
-    this.init();
+export class MailClient extends Application {
+  constructor(processID) {
+    super(processID);
     this.toolbar();
     const { windowID, description } = this.create();
     this.windowID = windowID;
     this.description = description;
   }
-  init() { }
   create() {
     return this.append();
   }
@@ -236,10 +235,10 @@ export class MailClient {
       }
     });
 
-    $("select.selectPicker").on('change', function (e) {
+    $("select.selectPicker").on('change', (e) => {
       const el = $(e.currentTarget);
       const cmd = el.data('cmd');
-      const value = this.value;
+      const value = el.val().toString();
       if (!cmd) return;
       e.preventDefault();
       try {
@@ -277,8 +276,6 @@ export class MailClient {
           sel = window.getSelection();
           sel.removeAllRanges();
           sel.addRange(range);
-        } else if (document.selection && range.select) {
-          range.select();
         }
       }
     });
@@ -315,9 +312,7 @@ export class MailClient {
           sel = window.getSelection();
           sel.removeAllRanges();
           sel.addRange(range);
-        } else if (document.selection && range.select) {
-          range.select();
-        }
+        } 
       }
       e.stopPropagation();
     });
@@ -333,7 +328,7 @@ export class MailClient {
       try {
         document.execCommand('foreColor', false, color);
       } catch (e) {
-        console.log('No Support');
+        console.log('No Support', e);
       }
       e.stopPropagation();
 

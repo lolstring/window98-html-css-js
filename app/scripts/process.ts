@@ -1,7 +1,8 @@
 import { completeArr } from './util';
 import { removeArr } from './util';
 
-export class process {
+export class Process {
+  process = [];
   /** @return {nothing} */
   /**
    * @param  program {string}
@@ -9,7 +10,7 @@ export class process {
    * @param  description {string}
    * @return {processID}
    */
-  newProcess() {
+  public newProcess(): number {
     //console.log(typeof processesID);
     const processID = this.processIDStore();
     return processID;
@@ -24,7 +25,7 @@ export class process {
    *
    * @return {processNumber}
    */
-  processIDStore() {
+  public processIDStore(): number {
     const num = JSON.parse(localStorage.getItem('processID'));
     const processNumber = completeArr(num);
     localStorage.setItem('processID', JSON.stringify(num));
@@ -47,24 +48,39 @@ export class process {
     localStorage.setItem('processID', JSON.stringify(num));
     return true;
   }
-  /**
-   * @param {process}
-   * @param {program}
-   * @param {windowID}
-   * @param {description}
-   * return true/false if added successfully.
-   */
-  addProcess(processID, program, windowID, description) {
-  }
-  removeProcess(processID) {
-  }
-  setStorage() {
-  }
-  setProcessActive(processID) {
-  }
-  setProcessInActive(processID) {
-  }
-  static remove(processID) {
 
+  addProcess(processID, program, windowID, description) {
+    this.process.push({
+      processID: processID,
+      program: program,
+      windowID: windowID,
+      description: description,
+      active: true
+    });
+  }
+
+  removeProcess(processID) {
+    const index = this.process.findIndex((p) => p.processID === processID);
+    if (index !== -1) {
+      this.process.splice(index, 1);
+      this.processIDRemove(processID);
+      return true;
+    }
+  }
+
+  setProcessActive(processID) {
+    const index = this.process.findIndex((p) => p.processID === processID);
+    if (index !== -1) {
+      this.process[index].active = true;
+      return true;
+    }
+  }
+
+  setProcessInActive(processID) {
+    const index = this.process.findIndex((p) => p.processID === processID);
+    if (index !== -1) {
+      this.process[index].active = false;
+      return true;
+    }
   }
 }

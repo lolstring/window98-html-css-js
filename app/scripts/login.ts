@@ -1,13 +1,13 @@
 import { isFirstLogin } from "./util";
-import { sound } from './sound';
-import { kernel } from './kernel';
+import { Sound } from './sound';
+import { Kernel } from './kernel';
 import { SystemUI } from './system-ui';
+import type { User } from 'application';
 
-export class login {
+export class Login {
   constructor() {
     //this.greetings();
     this.eventListeners();
-    this.sound = new sound();
     this.login();
     //this.lols();
   }
@@ -43,7 +43,7 @@ export class login {
     })
     $('.audio-button').off().on('click', () => {
       $('.audio-button').toggleClass('mute');
-      sound.toggleSound();
+      Sound.toggleSound();
     })
     $(window).on('load', () => {
       this.greetings();
@@ -144,45 +144,11 @@ export class login {
       "email": ""
     };
     userObj.files.push({
-      'fileID': 'file-0000000000002',
-      'filename': 'License and Credits',
-      'content': `
-<h3> License </h3><br>
-<br>
-The Windows 98 name, interface, and sample audio files are a property of
-Microsoft Corporation, the code within this project is released under the [MIT
-License].<br>
-<br>
-The MIT License (MIT)<br>
-<br>
-Copyright (c) [2016-2017] [Rahul Mehra]<br>
-<br>
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:<br>
-<br>
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.<br>
-<br>
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.<br>
-<br>
-<h3>Credits :</h3> <br>
-
-Wolf3d - https://github.com/jseidelin/wolf3d<br>
-Clippy - https://github.com/smore-inc/clippy.js<br>
-Winamp2 - https://github.com/captbaritone/winamp2-js<br>
-<br>
-Please see their respective licenses.
-`,
+      fileID: 'file-0000000000002',
+      filename: 'License and Credits',
+      content: `
+              <h3>License</h3><br><br>The Windows 98 name, interface, and sample audio files are a property of Microsoft Corporation, the code within this project is released under the [MIT License].<br><br>The MIT License (MIT)<br><br>Copyright (c) [2025] [Rahul Mehra]<br><br>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br><br>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br><br>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.<br><br><h3>Credits :</h3><br>Wolf3d - https://github.com/jseidelin/wolf3d<br>Clippy - https://github.com/smore-inc/clippy.js<br>Winamp2 - https://github.com/captbaritone/winamp2-js<br><br>Please see their respective licenses.
+      `,
       'type': 'doc',
       'program': 'msword',
       'creationDate': 1476970200000,
@@ -194,7 +160,7 @@ Please see their respective licenses.
   }
   setExistingUser(username) {
     const users = JSON.parse(localStorage.getItem('users'));
-    let currentUser;
+    let currentUser: User | undefined;
     $.each(users.users, (_k, v) => {
       if (v.username === username) {
 
@@ -216,7 +182,7 @@ Please see their respective licenses.
   }
   setup() {
     //log('called1');
-    const k = new kernel();
+    const k = new Kernel();
     k.store();
 
     const ui = new SystemUI();

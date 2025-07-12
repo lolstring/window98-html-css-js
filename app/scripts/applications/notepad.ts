@@ -1,9 +1,13 @@
-import { kernel } from './kernel';
+import Webamp from 'webamp/lazy';
+import { Kernel } from '../kernel';
+import { Application } from './application';
 
-export class Notepad {
-  constructor(processID, fileID) {
+export class Notepad extends Application {
+  fileID?: string;
+
+  constructor(processID: number, fileID: string) {
+    super(processID);
     this.fileID = fileID;
-    this.processID = processID;
     const { windowID, description } = this.create();
     this.windowID = windowID;
     this.description = description;
@@ -19,17 +23,16 @@ export class Notepad {
 
   }
   create() {
-    this.a++;
     //let notepadID = 'notepad-' + processID;
-    let file;
-    let description;
-    let content;
-    let filename;
-    let type;
+    let file: { filename: string; content: string; type: any; };
+    let description: string;
+    let content: string;
+    let filename: string;
+    let type: string;
     if (this.fileID) {
       //log(this.fileID);
       //var file = this.filename.split('.');
-      file = kernel.getFileFromLocal(this.fileID);
+      file = Kernel.getFileFromLocal(this.fileID);
       description = `${file.filename} - Notepad`;
       content = file.content;
       filename = file.filename;
@@ -45,7 +48,8 @@ export class Notepad {
     //SystemUI.setWindowPosition(a);
     return a;
   }
-  append(filename, content, _type, description) {
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  append(filename: string, content: string, _type: any, description: string) {
     const cd = 'contenteditable="true"';
     const notepadData = `<div id="notepad-${this.processID}" class="notepad window ui-widget-content" pid="${this.processID}" program-name="notepad" fileID=${this.fileID} saved="true">
             <div class="window-border">

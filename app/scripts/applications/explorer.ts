@@ -1,9 +1,11 @@
-import { kernel } from "./kernel";
-import { programData } from "./program-data";
+import { Kernel } from "../kernel";
+import { ProgramData } from "../program-data";
+import { Application } from './application';
 
-export class Explorer {
+export class Explorer extends Application {
+    directory: string;
     constructor(processID, directory) {
-        this.processID = processID;
+        super(processID);
         this.directory = directory;
         const { windowID, description } = this.create();
         this.windowID = windowID;
@@ -14,8 +16,8 @@ export class Explorer {
         return a;
     }
     append() {
-        const e = kernel.getFileFromLocal('file-0000000000002');
-        const iconURL = programData.getIconByType(e.type);
+        const e = Kernel.getFileFromLocal('file-0000000000002');
+        const iconURL = ProgramData.getIconByType(e.type);
         const iconData = `<div class="folder-icon user-file" tabindex="0" fileID="${e.fileID}" program-name="${e.program}" type="${e.extension}" style="background:url(${iconURL}) no-repeat center top;background-size: 32px; "><p class="text" style="text-align:center;"><span>${e.filename}</span></p></div>`;
         const b = this.getDirectoryContents();
         const explorerData = `<div id="explorer-${this.processID}" class="explorer window ui-widget-content" program-name="explorer" pid="${this.processID}" directory="${this.directory}">

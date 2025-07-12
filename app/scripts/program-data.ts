@@ -1,4 +1,4 @@
-export const programData = {
+export const ProgramData = {
   getIcon: (program) => {
     const ICON_PATH = '../images/win98_icons/'
     switch (program) {

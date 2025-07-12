@@ -1,6 +1,8 @@
-export class Wolf3d {
+import { Application } from './application';
+
+export class Wolf3d extends Application {
   constructor(processID) {
-    this.processID = processID;
+    super(processID);
     const { windowID, description } = this.create();
     this.windowID = windowID;
     this.description = description;

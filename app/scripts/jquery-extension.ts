@@ -1,4 +1,4 @@
-import * as $ from 'jquery';
+import $ from 'jquery';
 
 (($) => {
   $.widget("ui.combobox", {
@@ -139,7 +139,7 @@ import * as $ from 'jquery';
 
 $.fn.setInitialIcons = function (options) {
 
-  options = $.extend({
+  const newOptions = $.extend({
     selector: '.desktop-icon[program-name!="recyclebin"]',
     marginTop: 26,
     marginLeft: 0
@@ -147,26 +147,24 @@ $.fn.setInitialIcons = function (options) {
 
   return this.each(function () {
 
-    var $container = $(this),
-      $icons = $(options.selector, $container),
-      containerHeight = $(window).height(),
-      iconHeight = $($icons[0]).height(),
-      iconWidth = $($icons[0]).width(),
-      numberFit = Math.floor(containerHeight / (iconHeight + options.marginTop)),
-      top = 0,
-      left = 0;
+    const $container = $(this);
+    const $icons = $(newOptions.selector, $container);
+    const containerHeight = $(window).height();
+    const iconHeight = $($icons[0]).height();
+    const iconWidth = $($icons[0]).width();
+    const numberFit = Math.floor(containerHeight / (iconHeight + newOptions.marginTop));
+    let top = 0;
+    let left = 0;
     $icons.each(function (i) {
-      if (i % numberFit == 0 && i > 0) {
+      if (i % numberFit === 0 && i > 0) {
         top = 0;
-        left += iconWidth + options.marginLeft + 4;
-      } else {
-        top = top;
+        left += iconWidth + newOptions.marginLeft + 4;
       }
       $(this).css({
         top: top,
-        left: left + options.marginLeft
+        left: left + newOptions.marginLeft
       });
-      top += iconHeight + options.marginTop;
+      top += iconHeight + newOptions.marginTop;
     });
   });
 };

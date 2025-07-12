@@ -1,6 +1,9 @@
 {
   "linter": {
     "rules": {
+      "suspicious": {
+        "noExplicitAny": "info"
+      },
       "correctness": {
         "noUnusedVariables": {
           "level": "error",

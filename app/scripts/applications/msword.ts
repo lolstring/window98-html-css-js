@@ -1,11 +1,13 @@
-import { completeArr } from './util';
-import { removeArr } from './util';
-import { kernel } from './kernel';
-import { SystemUI } from './system-ui';
+import { completeArr } from '../util';
+import { removeArr } from '../util';
+import { Kernel } from '../kernel';
+import { SystemUI } from '../system-ui';
+import { Application } from './application';
 
-export class MsWord {
-  constructor(processID, fileID) {
-    this.a = 0;
+export class MsWord extends Application {
+  fileID?: string;
+  constructor(processID: number, fileID: string) {
+    super(processID);
     this.fileID = fileID;
     this.processID = processID;
     const { windowID, description } = this.create();
@@ -19,33 +21,31 @@ export class MsWord {
     const contents = $(doc).html();
     $(doc).blur(function () {
       if (contents !== $(this).html()) {
-        $(this).closest('div[pid]').attr('saved', false);
+        $(this).closest('div[pid]').attr('saved', "false");
       }
     });
 
   }
-  static execFontSize(size, unit) {
+  static execFontSize(size: string, unit: string) {
     const spanString = $('<span/>', {
       'text': document.getSelection()
     }).css('font-size', size + unit).prop('outerHTML');
     document.execCommand('insertHTML', false, spanString);
   }
   static selectHTML() {
-    let sel;
-    $('.document-wrap').blur();
+    let sel: Selection;
+    $('.document-wrap').trigger('blur');
     if (window.getSelection) {
       sel = window.getSelection();
       if (sel.getRangeAt && sel.rangeCount) {
         return sel.getRangeAt(0);
       }
-    } else if (document.selection?.createRange) {
-      return document.selection.createRange();
     }
     return null;
   }
   toolbar() {
     $('.toolbar a').on('mousedown', (e) => {
-      $('.document-wrap').blur();
+      $('.document-wrap').trigger('blur');
       e.stopPropagation();
       const el = $(e.currentTarget);
 
@@ -64,19 +64,18 @@ export class MsWord {
         return
       range = MsWord.selectHTML();
     })
-    $("select#fontSize").on('change', function (e) {
-      let sel;
+    $("select#fontSize").on('change', (e) => {
+      let sel: Selection;
       if (range) {
         if (window.getSelection) {
           sel = window.getSelection();
           sel.removeAllRanges();
           sel.addRange(range);
-        } else if (document.selection && range.select) {
-          range.select();
         }
       }
       e.stopPropagation();
-      const value = this.value;
+      const el = $(e.currentTarget);
+      const value = el.val().toString();
       //if (!cmd) return;
       //e.preventDefault();
       try {
@@ -86,10 +85,10 @@ export class MsWord {
       }
     });
 
-    $("select.selectPicker").on('change', function (e) {
+    $("select.selectPicker").on('change', (e) => {
       const el = $(e.currentTarget);
       const cmd = el.data('cmd');
-      const value = this.value;
+      const value = el.val().toString();
       if (!cmd) return;
       e.preventDefault();
       try {
@@ -123,7 +122,7 @@ export class MsWord {
     });
     $('.toolbar .b-hilite').on('mouseup', (e) => {
       e.stopPropagation();
-      let sel;
+      let sel: Selection;
       $('.document-wrap').blur();
       if (range) {
 
@@ -131,8 +130,6 @@ export class MsWord {
           sel = window.getSelection();
           sel.removeAllRanges();
           sel.addRange(range);
-        } else if (document.selection && range.select) {
-          range.select();
         }
       }
     });
@@ -164,15 +161,13 @@ export class MsWord {
     })
     $('.toolbar .b-fontcolor').on('mouseup', (e) => {
       //e.stopPropagation();
-      let sel;
+      let sel: Selection;
       $('.document-wrap').blur();
       if (range) {
         if (window.getSelection) {
           sel = window.getSelection();
           sel.removeAllRanges();
           sel.addRange(range);
-        } else if (document.selection && range.select) {
-          range.select();
         }
       }
       e.stopPropagation();
@@ -195,16 +190,15 @@ export class MsWord {
     });
   }
   create() {
-    this.a++;
     const docNumber = MsWord._wordNumberStore();
-    let content;
-    let filename;
-    let type;
-    let description;
+    let content: string;
+    let filename: string;
+    let type: string;
+    let description: string;
     if (this.fileID) {
       //log(this.fileID);
       //var file = this.filename.split('.');
-      const file = kernel.getFileFromLocal(this.fileID);
+      const file = Kernel.getFileFromLocal(this.fileID);
       description = `${file.filename} - Microsoft Word`;
       content = file.content;
       filename = file.filename;
@@ -229,14 +223,14 @@ export class MsWord {
     localStorage.setItem('docNumber', JSON.stringify(num));
     return docNumber;
   }
-  static _wordNumberRemove(v) {
+  static _wordNumberRemove(v: string) {
     const intV = Number.parseInt(v);
     const num = JSON.parse(localStorage.getItem('docNumber'));
     removeArr(num, intV);
     localStorage.setItem('docNumber', JSON.stringify(num));
     return true;
   }
-  append(docNumber, filename, content, _type, description) {
+  append(docNumber: number, filename: any, content: any, _type: any, description: any) {
     let cd = 'contenteditable="true"';
     let d = description;
     if (this.fileID === 'file-0000000000001' || this.fileID === 'file-0000000000002') {
@@ -588,7 +582,7 @@ export class MsWord {
   // 	}
   // 	return contentDocument;
   // }
-  static remove(docNumber, callback) {
+  static remove(docNumber: string, callback: (result: boolean) => void) {
     const parentID = `word-${docNumber}`;
     const saved = $(`#${parentID}`).attr('saved');
     if (saved === 'false') {

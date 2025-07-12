@@ -1,15 +1,16 @@
-import { process } from "./process";
+import { Process } from "./process";
 import { isFirstLogin } from "./util";
-import { MsWord } from "./msword";
-import { Notepad } from "./notepad";
-import { MailClient } from "./mail-client";
-import { programData } from "./program-data";
-import { kernel } from "./kernel";
-import { sound } from './sound';
+import { MsWord } from "./applications/msword";
+import { Notepad } from "./applications/notepad";
+import { MailClient } from "./applications/mail-client";
+import { ProgramData } from "./program-data";
+import { Kernel } from "./kernel";
+import { Sound } from './sound';
+import type { LaunchableApplications, User, UserFile } from 'application';
 
 let zIndex = 100;
 
-export class SystemUI extends process {
+export class SystemUI extends Process {
   botOpen: boolean;
   botWord: boolean;
   h: number;
@@ -21,22 +22,13 @@ export class SystemUI extends process {
   totalheight: number;
   totalwidth: number;
   offsetpx: number;
-  top1: any;
-  left1: any;
+  top1: number;
+  left1: number;
   taskWidth: number;
   iconNumber: number;
   iconTop: number;
   iconLeft: number;
   botSave: boolean;
-  ani1: JQuery<HTMLElement>;
-  parentID: any;
-  file: any;
-  fileBlob: string;
-  blob: string;
-  contentDocument: any;
-  filename: any;
-  fileID: any;
-  parentId: any;
   init() {
     this.windowInitalPositionValues();
     this.contextMenuInit();
@@ -74,7 +66,7 @@ export class SystemUI extends process {
      */
 
     $("#desktop").on("click", ".minimize", function () {
-      const pid = $(this).closest("[pid]").attr("pid");
+      const pid = Number.parseInt($(this).closest("[pid]").attr("pid"), 10);
       self.minimize(pid);
     });
     /**
@@ -85,7 +77,7 @@ export class SystemUI extends process {
      */
     $("#desktop").on("click", ".maximize", function () {
       //$('#desktop').trigger('beforeMinimize');
-      const pid = $(this).closest("[pid]").attr("pid");
+      const pid = Number.parseInt($(this).closest("[pid]").attr("pid"), 10);
       self.maximize(pid);
     });
 
@@ -108,7 +100,7 @@ export class SystemUI extends process {
 
       //e.preventDefault();
       if (!(e.currentTarget.id === "dialog")) {
-        self.setActive($(this).attr("pid"));
+        self.setActive(Number.parseInt($(this).attr("pid")));
       }
     });
 
@@ -127,7 +119,7 @@ export class SystemUI extends process {
       "dblclick",
       ".ui-resizable > div.window-border > .title-bar > .title",
       function () {
-        const pid = $(this).closest("[pid]").attr("pid");
+        const pid = Number.parseInt($(this).closest("[pid]").attr("pid"), 10);
         self.maximize(pid);
       },
     );
@@ -215,7 +207,7 @@ export class SystemUI extends process {
       $("#run").draggable({
         handle: ".title-bar",
       });
-      self.setActive($("#run").attr("pid"));
+      self.setActive(Number.parseInt($("#run").attr("pid"), 10));
     });
     $("#run .ok-button").on("click", function () {
       if ($(this).val() === "ok") {
@@ -225,7 +217,7 @@ export class SystemUI extends process {
       }
     });
     $("#run .close-run,#run .close-button").on("click", function () {
-      const pid = $(this).closest("[pid]").attr("pid");
+      const pid = Number.parseInt($(this).closest("[pid]").attr("pid"), 10);
       self.beforeWindow(pid, () => {
         self.programMinimize(pid);
       });
@@ -237,7 +229,7 @@ export class SystemUI extends process {
       $(this).children().addClass("active");
       //setting file size
       const p1 = $(this).closest("[pid]").attr("id");
-      const file = kernel.getFileFromLocal($(this).attr("fileid"));
+      const file = Kernel.getFileFromLocal($(this).attr("fileid"));
       const size = Math.round((JSON.stringify(file).length * 2) / 1024);
       $(`#${p1} .box.size`).text(`${size} KB`);
     });
@@ -298,7 +290,6 @@ export class SystemUI extends process {
     });
 
     $("#desktop").on("click", ".save-button", function () {
-      debugger;
       self.save(this);
     });
     $("#desktop").on("click", ".desktop-ico", function () {
@@ -439,7 +430,7 @@ export class SystemUI extends process {
     );
     $("#desktop").on("click", ".window-open", function (e) {
       e.preventDefault();
-      const pid = $(this).attr("pid");
+      const pid = Number.parseInt($(this).attr("pid"), 10);
       //console.log('lol' + $(this).attr('id').replace('task-', ''));
       if (!$(`.window[pid="${pid}"]`).is(":animated")) {
         if ($(this).hasClass("active-task")) {
@@ -460,7 +451,7 @@ export class SystemUI extends process {
     $("#taskbar .show-desktop").on("click", () => {
       $(".window").each(function () {
         if ($(this)[0].hasAttribute("pid")) {
-          self.minimize($(this).attr("pid"));
+          self.minimize(Number.parseInt($(this).attr("pid"), 10));
         }
       });
     });
@@ -483,20 +474,20 @@ export class SystemUI extends process {
    * @param  {selector}
    * @return {nothing}
    */
-  async program(iconSelector) {
-    let p;
-    let processID;
+  async program(iconSelector: HTMLElement) {
+    let p: LaunchableApplications;
+    let processID: number;
 
     const selector = $(iconSelector);
     const program = selector.attr("program-name");
     const fileID = selector.attr("fileid");
 
     processID = this.isOpen(fileID);
-    if (processID != null || typeof processID !== "undefined") {
+    if (typeof processID === 'number' && processID > 0) {
       // console.log('processID' + processID);
       this.setActive(processID);
     } else {
-      processID = super.newProcess();
+      processID = this.newProcess();
       switch (program) {
         case "msword":
           p = new MsWord(processID, fileID);
@@ -525,7 +516,7 @@ export class SystemUI extends process {
         case "wolf-3d": {
           const a = this.isRunning(program);
           if (!a) {
-            p = await import('./wolf3d').then(module => new module.Wolf3d(processID));
+            p = await import('./applications/wolf3d').then(module => new module.Wolf3d(processID));
           } else {
             this.setActive(a);
           }
@@ -534,7 +525,7 @@ export class SystemUI extends process {
         case "minesweeper": {
           const a = this.isRunning(program);
           if (!a) {
-            p = await import('./minesweeper').then(module => new module.Minesweeper(processID));
+            p = await import('./applications/minesweeper').then(module => new module.Minesweeper(processID));
           } else {
             this.setActive(a);
           }
@@ -543,7 +534,7 @@ export class SystemUI extends process {
         case "winamp": {
           const a = this.isRunning(program);
           if (!a) {
-            p = await import('./winamp').then(module => new module.Winamp(processID));
+            p = await import('./applications/winamp').then(module => new module.Winamp(processID));
           } else {
             this.setActive(a);
           }
@@ -553,11 +544,11 @@ export class SystemUI extends process {
           this.beforeLogoff(true);
           break;
         case "explorer":
-          p = await import('./explorer').then((module) => new module.Explorer(processID, selector.attr("directory")));
+          p = await import('./applications/explorer').then((module) => new module.Explorer(processID, selector.attr("directory")));
           break;
       }
       if (p) {
-        super.addProcess(processID, program, p.windowID, p.description);
+        this.addProcess(processID, program, p.windowID, p.description);
         this.setWindowPosition(p.windowID);
         this.appendTask(processID, program, p.windowID, p.description);
         this.setActive(processID);
@@ -566,9 +557,9 @@ export class SystemUI extends process {
       }
     }
   }
-  isOpen(fileID) {
-    let processID;
-    let wfileID;
+  isOpen(fileID: string) {
+    let processID: string;
+    let wfileID: string;
     // if ($('.window[fileid="' + fileID + '"]').length != 0) {
     //     processID = $('.window[fileid="' + fileID + '"]').attr('pid');
     // }
@@ -581,28 +572,26 @@ export class SystemUI extends process {
         return false;
       }
     });
-    return processID;
-  }
-  isRunning(program) {
-    let a: string | undefined;
-    if ($(`.window[program-name="${program}"]`).length !== 0) {
-      a = $(`.window[program-name="${program}"]`).attr("pid");
+    if (processID === undefined || processID === null) {
+      return;
     }
-    // $('.window').each(function(){
-    // 	if($(this).attr('program-name')===program){
-    // 		a = $(this).attr('pid');
-    // 	}
-    // })
+    return Number.parseInt(processID, 10);
+  }
+  isRunning(program: string) {
+    let a: number | undefined;
+    if ($(`.window[program-name="${program}"]`).length !== 0) {
+      a = Number.parseInt($(`.window[program-name="${program}"]`).attr("pid"), 10);
+    }
     return a;
   }
-  close(closeButton) {
+  close(closeButton: any) {
     let windowID = $(closeButton).closest("[pid]").attr("id");
     windowID = `#${windowID}`;
-    const pid = $(windowID).attr("pid");
+    const pid = Number.parseInt($(windowID).attr("pid"), 10);
     const program = $(windowID).attr("program-name");
     switch (program) {
       case "msword":
-        MsWord.remove($(windowID).attr("document-number"), (close) => {
+        MsWord.remove($(windowID).attr("document-number"), (close: any) => {
           this.programClose(pid, close);
         });
         break;
@@ -610,11 +599,11 @@ export class SystemUI extends process {
         this.programClose(pid, true);
     }
   }
-  properties(fileID) {
-    const processID = super.newProcess();
+  properties(fileID: string) {
+    const processID = this.newProcess();
     this.newProperties(processID, fileID);
   }
-  newProperties(processID, fileID) {
+  newProperties(processID: number, fileID: string) {
     const file = this.getFileFromLocal(fileID);
     const size = JSON.stringify(file).length * 2;
     const cdate = new Date(file.creationDate);
@@ -623,7 +612,7 @@ export class SystemUI extends process {
     const mdate = new Date(file.modifiedDate);
     //var modified = mdate.getDay() + ', ' + mdate.getMonth() + mdate.getDate() +', '+ mdate.getFullYear() +' '+ mdate.getHours() +':'+mdate.getMinutes()+':'+mdate.getSeconds()+' '+mdate.getHours() >= 12 ? 'PM' : 'AM';
     const modified = `${mdate.toDateString()}, ${mdate.toLocaleTimeString()}`;
-    const iconURL = programData.getIconByType(file.type);
+    const iconURL = ProgramData.getIconByType(file.type);
     const propertiesData = `<div id="properties-${processID}" class="properties window ui-widget-content" program-name="properties" pid="${processID}">
             <div class="window-border">
                 <div class="title-bar h-count" id="parent">
@@ -719,7 +708,7 @@ export class SystemUI extends process {
     });
     this.setActive(processID);
   }
-  maximize(pid) {
+  maximize(pid: number) {
     const windowID = $(`.window[pid="${pid}"]`).attr("id");
     if ($(`#${windowID}`).hasClass("wolf")) return;
     const height = $(window).height() - 22;
@@ -809,7 +798,7 @@ export class SystemUI extends process {
       }
     }
   }
-  minimize(pid) {
+  minimize(pid: number) {
     let windowID = $(`.window[pid="${pid}"]`).attr("id");
     windowID = `#${windowID}`;
     //var pid = $(windowID).attr('pid');
@@ -823,7 +812,7 @@ export class SystemUI extends process {
     }
   }
   //top: 54.3px; left: 634.333px; height: 305.58px; width: 939.5px; z-index: 102; display: block;
-  beforeWindow(pid, callback) {
+  beforeWindow(pid: number, callback: { (): void; (): void; (): void; (): void; (): void; }) {
     $(`.window[pid="${pid}"]`)
       .promise()
       .done(() => {
@@ -867,14 +856,14 @@ export class SystemUI extends process {
       });
   }
 
-  programClose(pid, close) {
+  programClose(pid: number, close: boolean) {
     if (close === true) {
       this.removeWindow(pid);
-      super.removeProcess(pid);
+      this.removeProcess(pid);
       this.removeTask(pid);
     }
   }
-  programMinimize(pid) {
+  programMinimize(pid: number) {
     this.minimizeWindow(pid);
     this.minimizeTask(pid);
   }
@@ -885,14 +874,14 @@ export class SystemUI extends process {
    * set process active in process list.
    *
    */
-  setInActive(pid) {
+  setInActive(pid: number) {
     this.setTaskInActive(pid);
-    super.setProcessInActive(pid);
+    this.setProcessInActive(pid);
     this.minimize(pid);
   }
-  setActive(pid) {
+  setActive(pid: number) {
     this.setTaskActive(pid);
-    super.setProcessActive(pid);
+    this.setProcessActive(pid);
     this.setWindowActive(pid);
   }
   //----------------------------------------------- MAIN WINDOW FUNCTIONS -----------------------------------------//
@@ -931,7 +920,7 @@ export class SystemUI extends process {
      * @param {windowId}- The ID of the window to set position for.
      * @return nothing
      */
-  setWindowPosition(windowId) {
+  setWindowPosition(windowId: string) {
     const pid = $(windowId);
     if ($(windowId).hasClass("winamp")) return;
     const offset = pid.offset();
@@ -959,15 +948,15 @@ export class SystemUI extends process {
     }
   }
 
-  setWindowActive(pid) {
-    let windowData;
+  setWindowActive(pid: any) {
+    let windowData: JQuery.PlainObject<any>;
     const $pid = $(`.window[pid="${pid}"]`);
     const state = $pid.find(".maximize").attr("state");
     if (!$(`.window[pid="${pid}"]`).is(":animated")) {
       if ($pid.css("opacity") === "0") {
         if (state === "max") {
           const height = $(window).height() - $("#taskbar").outerHeight();
-          this.ani1 = $(`.window[pid="${pid}"]`).animate({
+          $(`.window[pid="${pid}"]`).animate({
             opacity: 1,
             top: 0,
             left: 0,
@@ -1031,7 +1020,7 @@ export class SystemUI extends process {
   setWindowInActive() {
     $(".window").removeClass("active-window");
   }
-  removeWindow(pid) {
+  removeWindow(pid: any) {
     $(`.window[pid="${pid}"]`).animate({
       opacity: 0,
       top: $(window).height(), // to force the window to minimize at the bottom corner
@@ -1049,7 +1038,7 @@ export class SystemUI extends process {
         $(`.window[pid="${pid}"]`).remove();
       });
   }
-  minimizeWindow(pid) {
+  minimizeWindow(pid: any) {
     if (!$(`.window[pid="${pid}"]`).is(":animated")) {
       $(`.window[pid="${pid}"]`).animate({
         opacity: 0,
@@ -1112,7 +1101,7 @@ export class SystemUI extends process {
         }
       });
   }
-  beforeSystemClose(parentID, callback) {
+  beforeSystemClose(parentID: string, callback: (e: boolean) => void) {
     let saved = true;
     $(".window").each(function () {
       if ($(this).attr("saved") === "false") {
@@ -1144,8 +1133,8 @@ export class SystemUI extends process {
       callback(true);
     }
   }
-  beforeFinalShutdown(shut) {
-    this.beforeSystemClose("shutdown", (e) => {
+  beforeFinalShutdown(shut: string) {
+    this.beforeSystemClose("shutdown", (e: boolean) => {
       if (e) {
         if (shut === "shutdown") {
           this.finalShutdown();
@@ -1205,7 +1194,7 @@ export class SystemUI extends process {
   finalShutdown() {
     $("body").html("");
     $("body").css("background", "url(../images/shutdown.jpg) no-repeat center");
-    sound.play("sprite3");
+    Sound.play("sprite3");
     setTimeout(() => {
       $("body")
         .css("background", "none")
@@ -1217,12 +1206,12 @@ export class SystemUI extends process {
   restart() {
     $("body").html("");
     $("body").css("background", "url(../images/shutdown.jpg) no-repeat center");
-    sound.play("sprite3");
+    Sound.play("sprite3");
     setTimeout(() => {
       location.reload();
     }, 2000);
   }
-  static insertOverlay(id, background) {
+  static insertOverlay(id: string, background: boolean) {
     let overlayData = "";
     if (background) {
       overlayData = `<div id="overlay" width="100%" height="100%" style="background:url(images/word%20images/background123.png);"></div>`;
@@ -1236,7 +1225,7 @@ export class SystemUI extends process {
     $(`#${id}`).css('zIndex', z);
     $('#overlay').on('click', (e) => {
       e.stopPropagation();
-      sound.play('sprite2');
+      Sound.play('sprite2');
     });
   }
   static removeOverlay() {
@@ -1294,7 +1283,7 @@ export class SystemUI extends process {
       $(parentSel).css("zIndex", "2147483646");
       const d = $(this).attr("value");
       if (d === "yes") {
-        self.beforeSystemClose("logoff #dialog", (e) => {
+        self.beforeSystemClose("logoff #dialog", (e: boolean) => {
           if (e) {
             if (destroySession) {
               self.destroySession();
@@ -1316,7 +1305,7 @@ export class SystemUI extends process {
     });
   }
   logoff() {
-    sound.play("sprite3");
+    Sound.play("sprite3");
     setTimeout(() => {
       location.reload();
     }, 4000);
@@ -1336,9 +1325,9 @@ export class SystemUI extends process {
     $("#combobox").combobox();
     //End Data*/f
   }
-  runProgram(value) {
-    const v1 = value.toLowerCase();
-    const pid = $("#run").attr("pid");
+  runProgram(value: string | number | string[]) {
+    const v1 = value.toString().toLowerCase();
+    const pid = Number.parseInt($("#run").attr("pid"), 10);
     if (~v1.indexOf("word")) {
       this.newWord();
     } else if (~v1.indexOf("notepad")) {
@@ -1354,10 +1343,10 @@ export class SystemUI extends process {
     } else if (~v1.indexOf("help")) {
       console.log(this.runProgram.toString());
     } else if (~v1.indexOf(".doc")) {
-      const newValue = value.replace(".doc", "");
-      const a = this.checkIfFileExists(newValue, "doc");
-      if (a) {
-        this.newWord(a);
+      const newValue = value.toString().replace(".doc", "");
+      const fileId = this.checkIfFileExists(newValue, "doc");
+      if (fileId) {
+        this.newWord(fileId);
       } else {
         SystemUI.setDialogBox(
           "run",
@@ -1368,7 +1357,7 @@ export class SystemUI extends process {
         return;
       }
     } else if (~v1.indexOf(".pdf")) {
-      const newValue = value.replace(".pdf", "");
+      const newValue = value.toString().replace(".pdf", "");
       const a = this.checkIfFileExists(newValue, "pdf");
       if (a) {
         this.newWord(a);
@@ -1382,7 +1371,7 @@ export class SystemUI extends process {
         return;
       }
     } else if (~v1.indexOf(".txt")) {
-      const newValue = value.replace(".txt", "");
+      const newValue = value.toString().replace(".txt", "");
       const a = this.checkIfFileExists(newValue, "txt");
       if (a) {
         this.newNotepad(a);
@@ -1398,7 +1387,7 @@ export class SystemUI extends process {
     } else {
       SystemUI.setDialogBox(
         "run",
-        value,
+        value.toString(),
         "1",
         `Cannot find the file ${value}. Make sure the path and filename are correct and that all required libraries are available.<br> Commands Supported:<br>&nbsp;&#149;Installed Executable<br>&nbsp;&#149;Filename with Extension<br>&nbsp;`,
       );
@@ -1415,7 +1404,7 @@ export class SystemUI extends process {
     throw new Error('Method not implemented.');
   }
   //----------------------------------------------- SAVE/OPEN/ATTACH WINDOW FUNCTIONS -----------------------------------------//
-  showOpen(parentId) {
+  showOpen(parentId: string) {
     //e.preventDefault();
     const openSel = `#${parentId} #open`;
     $(openSel).css("display", "block");
@@ -1434,14 +1423,14 @@ export class SystemUI extends process {
       .css("pointer-events", "none");
     $(openSel).css("pointer-events", "auto");
     if (this.botOpen === false) {
-      globalBot.agent((a) => {
+      window.globalBot.agent((a: { moveTo: (arg0: number, arg1: number) => void; speak: (arg0: string) => void; }) => {
         a.moveTo(offset.left + 150, offset.top + 150);
         a.speak("You can open a file from this desktop.");
       });
       this.botOpen = true;
     }
   }
-  showSave(parentId) {
+  showSave(parentId: string) {
     const saveSel = `#${parentId} #save`;
     $(saveSel).css("display", "block");
     // .draggable({
@@ -1470,15 +1459,15 @@ export class SystemUI extends process {
     }
   }
 
-  updateContentBox(e) {
+  updateContentBox(e: string) {
     const content = $(`${e} .content1-box`);
     //var childOffset1 ={top,left};
     $(`${e} .user-file-list`).remove();
     const b = this.getFromLocal();
-    let extension;
-    let img;
-    let type;
-    let filename;
+    let extension: string;
+    let img: string;
+    let type: string;
+    let filename: any;
 
     $.each(b, (_i, e) => {
       //var a = memphis.getDesktopPos();
@@ -1500,7 +1489,7 @@ export class SystemUI extends process {
       $(iconData).appendTo(content);
     });
   }
-  print(content, fileName = 'Untitled') {
+  print(content: string, fileName = 'Untitled') {
     const printWindow = window.open('', '', 'height=400,width=800');
     printWindow.document.body.innerHTML = `<html><head><title>${fileName}</title>`;
     printWindow.document.body.innerHTML += '</head><body>';
@@ -1511,12 +1500,12 @@ export class SystemUI extends process {
     printWindow.print();
     printWindow.close();
   }
-  printFile(parentId) {
+  printFile(parentId: string) {
     const content = $(`#${parentId}-content .document-wrap`).html();
     const filename = $(`#${parentId}`).attr("document-title");
     this.print(content, filename);
   }
-  open(windowId) {
+  open(windowId: any) {
     const self = this;
     const parentId = $(windowId)
       .closest("[id]")
@@ -1585,16 +1574,16 @@ export class SystemUI extends process {
       }
     }
   }
-  save(windowId) {
+  save(windowId: any) {
     const parentId = $(windowId)
       .closest("[id]")
       .parent()
       .closest("[id]")
       .attr("id");
     const parentSel = `#${parentId}`;
-    const type = $(`${parentSel} #save select#file-type`).val();
-    const location = $(`${parentSel} #save select#save-location`).val();
-    const filename = $(`${parentSel} #save input.filename`).val();
+    const type = $(`${parentSel} #save select#file-type`).val().toString();
+    const location = $(`${parentSel} #save select#save-location`).val().toString();
+    const filename = $(`${parentSel} #save input.filename`).val().toString();
     if (filename === "") {
       SystemUI.setDialogBox(
         parentId,
@@ -1633,16 +1622,8 @@ export class SystemUI extends process {
     }
   }
   getFromLocal() {
-    const a = [];
-    let localData = [];
-    const result = $.grep(
-      JSON.parse(localStorage.getItem("users")).users,
-      (e) =>
-        e.username === JSON.parse(localStorage.getItem("currentUser")).username,
-    );
-    if (result.length === 1) {
-      localData = result[0];
-    }
+    const files: UserFile[] = [];
+    const localData = this.getCurrentUser();
     //var localData = JSON.parse(localStorage.getItem("user")).find(function(e){return e.username = JSON.parse(localStroage.getItem('currentUser')).username});
 
     if (
@@ -1651,64 +1632,49 @@ export class SystemUI extends process {
       localData.files.length > 0
     ) {
       $.each(localData.files, (_i, e) => {
-        const b = {
+        const file = {
           fileID: e.fileID,
           program: e.program,
           filename: e.filename,
           type: e.type,
-        };
-        //if(typeof a != "undefined" && a != null && a.length > 0){
-        a.pushIfNotExist(
-          b,
-          (k) =>
-            k.fileID === b.fileID &&
-            k.filename === b.filename &&
-            k.type === b.type,
-        );
-        //	}
-        //	else{//this doesn't execute
-        //		console.log("nothere");
-        //		a.push({filename:e.filename,type:e.type});
-        //	}
+        } as UserFile;
+        if (!files.some((k) =>
+          k.fileID === file.fileID &&
+          k.filename === file.filename &&
+          k.type === file.type
+        )) {
+          files.push(file);
+        }
       });
-      return a;
+      return files;
     }
     console.log("No Files");
   }
-  getFileFromLocal(fileID) {
-    let contentDocument;
-    let localData;
+  private getCurrentUser() {
     const result = $.grep(
       JSON.parse(localStorage.getItem("users")).users,
-      (e) =>
-        e.username === JSON.parse(localStorage.getItem("currentUser")).username,
+      (e: User) => e.username === JSON.parse(localStorage.getItem("currentUser")).username
     );
-    if (result.length === 1) {
-      localData = result[0];
-    }
+    return result.length === 1 ? result[0] : null;
+  }
+
+  getFileFromLocal(fileID: string | number | string[]) {
+    let file: UserFile;
+    const localData = this.getCurrentUser();
     for (let i = 0; i < localData.files.length; i++) {
       if (fileID === localData.files[i].fileID) {
-        contentDocument = localData.files[i];
+        file = localData.files[i];
         break;
       }
     }
-    return contentDocument;
+    return file;
   }
 
-  saveToLocal(parentId, filename, contentDocument, type) {
-    let localData;
+  saveToLocal(parentId: string, filename: string, contentDocument: string, type: string) {
     if (typeof Storage !== "undefined") {
-      $(`#${parentId}`).attr("saved", true);
+      $(`#${parentId}`).attr("saved", "true");
       const program = $(`#${parentId}`).attr("program-name");
-      const result = $.grep(
-        JSON.parse(localStorage.getItem("users")).users,
-        (e) =>
-          e.username ===
-          JSON.parse(localStorage.getItem("currentUser")).username,
-      );
-      if (result.length === 1) {
-        localData = result[0];
-      }
+      const localData = this.getCurrentUser();
       const exists = this.checkIfFileExists(filename, type);
       if (exists) {
         if ($(`#${parentId}`).attr("fileid") !== exists) {
@@ -1805,38 +1771,21 @@ export class SystemUI extends process {
     }
   }
 
-  checkIfFileExists(filename, type) {
-    let b;
-    let localData;
-    const result = $.grep(
-      JSON.parse(localStorage.getItem("users")).users,
-      (e) =>
-        e.username === JSON.parse(localStorage.getItem("currentUser")).username,
-    );
-    if (result.length === 1) {
-      localData = result[0];
-    }
-    $.each(localData.files, function () {
-      if (this.filename === filename && this.type === type) {
-        a = true;
-        b = this.fileID;
-        return false;
+  checkIfFileExists(filename: any, type: string) {
+    let b: string | false;
+    const localData = this.getCurrentUser();
+    for (const file of localData.files) {
+      if (file.filename === filename && file.type === type) {
+        b = file.fileID;
       }
-      if (this.filename !== filename) {
+      if (file.filename !== filename) {
         b = false;
       }
-    });
+    }
     return b;
   }
-  rename(fileID, filename) {
-    const result = $.grep(
-      JSON.parse(localStorage.getItem("users")).users,
-      (e) =>
-        e.username === JSON.parse(localStorage.getItem("currentUser")).username,
-    );
-    if (result.length === 1) {
-      localData = result[0];
-    }
+  rename(fileID: string, filename: string) {
+    const localData = this.getCurrentUser();
     for (let i = 0; i < localData.files.length; i++) {
       if (fileID === localData.files[i].fileID) {
         localData.files[i].filename = filename;
@@ -1862,7 +1811,7 @@ export class SystemUI extends process {
     $(`.window[fileid="${fileID}"]`).attr("document-title", filename);
     $(`#taskbar [pid="${pid}"] p`).text(filename);
   }
-  async saveFile(parentId, filename, type) {
+  async saveFile(parentId: string, filename: string | number | string[], type: string | number | string[]) {
     //console.log(type);
     /*
     var parentId = $(windowId).closest('[id]').parent().closest('[id]').attr('id');
@@ -1906,18 +1855,18 @@ export class SystemUI extends process {
       const blob = new Blob([contentTxt], {
         type: "text/plain;charset=utf-8",
       });
-      saveAs(blob, `${filename}.txt`);
+      await import('file-saver').then((FileSaver) => FileSaver.saveAs(blob, `${filename}.txt`));
       $(`#${parentId}`).css("pointer-events", "auto");
       return;
     }
     console.log("error");
     $(`#${parentId}`).css("pointer-events", "auto");
   }
-  convertImagesToBase64(parentId) {
+  convertImagesToBase64(parentId: string) {
     const regularImages = $(`#${parentId}-content img`);
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    [].forEach.call(regularImages, (imgElement) => {
+    [].forEach.call(regularImages, (imgElement: HTMLImageElement) => {
       // preparing canvas for drawing
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       canvas.width = imgElement.width;
@@ -1931,11 +1880,10 @@ export class SystemUI extends process {
     });
     canvas.remove();
   }
-  deleteFile(fileID) {
+  deleteFile(fileID: string) {
     window.globalBot.agent((a) => {
       a.speak("Are you sure you want to delete this file?");
     });
-    let localData;
     if (fileID === "file-0000000000001" || fileID === "file-0000000000002") {
       SystemUI.setDialogBox(
         "desktop",
@@ -1945,14 +1893,7 @@ export class SystemUI extends process {
       );
       return;
     }
-    const result = $.grep(
-      JSON.parse(localStorage.getItem("users")).users,
-      (e) =>
-        e.username === JSON.parse(localStorage.getItem("currentUser")).username,
-    );
-    if (result.length === 1) {
-      localData = result[0];
-    }
+    const localData = this.getCurrentUser();
     for (let i = 0; i < localData.files.length; i++) {
       if (localData.files[i].fileID === fileID) {
         localData.files.splice(i, 1);
@@ -1970,9 +1911,9 @@ export class SystemUI extends process {
     });
     localStorage.setItem("users", JSON.stringify(users));
     $(`.desktop-icon[fileid="${fileID}"`).remove();
-    $(`.window[fileid="${fileID}"]`).attr("saved", false);
+    $(`.window[fileid="${fileID}"]`).attr("saved", "false");
   }
-  attach(windowId) {
+  attach(windowId: any) {
     const parentId = $(windowId)
       .closest("[id]")
       .parent()
@@ -1981,34 +1922,36 @@ export class SystemUI extends process {
     const parentSel = `#${parentId}`;
     const fileids = $(`${parentSel} #attach .fileID`)
       .val()
+      .toString()
       .split("|");
     for (let i = 0; i < fileids.length; i++) {
       this.attachCreate(parentSel, fileids[i]);
     }
   }
-  attachCreate(parentID, fileID) {
-    this.parentID;
+  attachCreate(parentID: string, fileID: any) {
+    let file: UserFile;
+    let fileBlob: string | Blob;
     if (fileID) {
-      this.file = this.getFileFromLocal(fileID);
-      this.fileBlob = "";
-      if (this.file.type === "pdf") {
-        this.fileBlob = "pdf";
-        this.attachAppend(parentID, this.file, this.fileBlob);
+      file = this.getFileFromLocal(fileID);
+      fileBlob = "";
+      if (file.type === "pdf") {
+        fileBlob = "pdf";
+        this.attachAppend(parentID, file, fileBlob);
       } else {
-        this.fileToBlob(this.file.content, this.file.type, (abc) => {
-          this.fileBlob = abc;
-          this.attachAppend(parentID, this.file, this.fileBlob);
+        this.fileToBlob(file.content, file.type, (abc: string) => {
+          fileBlob = abc;
+          this.attachAppend(parentID, file, fileBlob);
         });
       }
     } else {
       return;
     }
   }
-  attachAppend(parentID, file, fileBlob) {
+  attachAppend(parentID: any, file: { fileID: any; type: any; filename: any; }, fileBlob: string) {
     if (
       $(`${parentID} div.attachment [file-id="${file.fileID}"]`).length < 1
     ) {
-      const iconURL = programData.getIconByType(file.type);
+      const iconURL = ProgramData.getIconByType(file.type);
       const attachData = `<div file-id="${file.fileID}" class="attached-list">
 		<img class="icon" src="${iconURL}"/>
 		<span>${file.filename}</span>
@@ -2031,9 +1974,9 @@ export class SystemUI extends process {
       );
     }
   }
-  async fileToBlob(contentDocument, type, callback) {
-    let blob;
-    let cd = contentDocument;
+  async fileToBlob(contentDocument: any, type: string, callback: (blob: string | Blob) => void) {
+    let blob: string | Blob;
+    const cd = contentDocument;
     if (type === "word" || type === "doc") {
       await import("html-docx-js/dist/html-docx").then(async (htmlToDocx) => {
         //$.cachedScript("vendor/html-docx.js").done(function(script, textStatus) {
@@ -2057,11 +2000,6 @@ export class SystemUI extends process {
       callback(blob);
     }
   }
-  attachPDFData(parentId, fileID, filename) {
-    this.filename = filename;
-    this.fileID = fileID;
-    this.parentId = parentId;
-  }
   //----------------------------------------------- TASKBAR FUNCTIONS -----------------------------------------//
   /**
    * Append Task to Taskbar
@@ -2071,10 +2009,10 @@ export class SystemUI extends process {
    * @param  {description}
    * @return {nothing.}
    */
-  appendTask(processID, program, windowID, description) {
+  appendTask(processID: any, program: string, windowID: string, description: string) {
     const newWindowID = windowID.substring(1);
     const taskID = `task-${newWindowID}`;
-    const iconURL = programData.getIcon(program);
+    const iconURL = ProgramData.getIcon(program);
     const taskbarData = `<span class="window-open" id="${taskID}" pid="${processID}" program-name="${program} "title="${description}">
 			<img class="icon" src="${iconURL}"/>
 			<p class="text">${description}</p>
@@ -2096,7 +2034,7 @@ export class SystemUI extends process {
     const availableWidth = $("#taskbar").outerWidth() - 228;
     const numberOpen = $(".window-open").length;
     const maxWidth = Number.parseInt($(".window-open").css("max-width"), 10);
-    let width;
+    let width: number;
     if (numberOpen > 0) {
       if (numberOpen * maxWidth > availableWidth) {
         width = Math.round(availableWidth / numberOpen) - 10;
@@ -2120,8 +2058,8 @@ export class SystemUI extends process {
     const totalChildNodes = childNodes.length;
     const numberOfPages = Math.ceil(totalChildNodes / numberFit);
     const parentElement = $('<span id="task"></span>');
-    let temp;
-    let i;
+    let temp: string;
+    let i: number;
     let j = 1;
     let k = 0;
     for (i = 1; i <= numberOfPages; i++) {
@@ -2150,7 +2088,7 @@ export class SystemUI extends process {
       $("#pagination").css("visibility", "hidden");
     }
   }
-  showTaskPage(num) {
+  showTaskPage(num: number) {
     $(".task-page").css("display", "none").removeClass("active-page");
     $(`#task-${num}`)
       .css("display", "inline")
@@ -2172,26 +2110,26 @@ export class SystemUI extends process {
     const a = 0;
     return a;
   }
-  removeTask(pid) {
+  removeTask(pid: any) {
     $(`#taskbar [pid="${pid}"]`).remove();
     this.setTaskPosition();
   }
-  setTaskActive(pid) {
+  setTaskActive(pid: any) {
     $("#task span.active-task").removeClass("active-task");
     $(`#task [pid="${pid}"]`).addClass("active-task");
   }
-  setTaskInActive(_pid) {
+  setTaskInActive(_pid: any) {
     $("#task span.active-task").removeClass("active-task");
     //$('#task [pid="' + pid + '"]').addClass('active-task');
   }
-  minimizeTask(pid) {
+  minimizeTask(pid: any) {
     $(`#task [pid="${pid}"]`).removeClass("active-task");
   }
 
   //------------------------------------------ Dialog Box Functions ---------------------------------------------- //
 
-  static setDialogBox(parentId, title, type, errorMessage) {
-    let newParentId;
+  static setDialogBox(parentId: string | string[], title: string | number | boolean | ((this: HTMLElement, index: number, text: string) => string | number | boolean), type: string, errorMessage: string) {
+    let newParentId: any;
     if (parentId.indexOf("#") === 0) {
       newParentId = parentId.slice(1, parentId.length);
     } else {
@@ -2311,11 +2249,11 @@ export class SystemUI extends process {
     const iconWidth = 82;
     const containerHeight = $(window).height();
     const numberFit = Math.floor(containerHeight / (iconHeight + 8));
-    let otop;
-    let oleft;
+    let otop: number;
+    let oleft: number;
     let indexY = 0;
     let indexX = 0;
-    let a;
+    let a: Element | { left1?: number; top1?: number; } | null;
     $icons.each(function (i) {
       otop = Number.parseInt($(this).css("top"), 10);
       oleft = Number.parseInt($(this).css("left"), 10);
@@ -2435,10 +2373,10 @@ export class SystemUI extends process {
   //     });
   // }
   setDesktop() {
-    let extension;
-    let img;
-    let type;
-    let filename;
+    let extension: string;
+    let img: string;
+    let type: string;
+    let filename: any;
     const b = this.getFromLocal();
     $.each(b, (_i, e) => {
       //a = self.getDesktopPos();
@@ -2475,9 +2413,9 @@ export class SystemUI extends process {
       $("#desktop-icons").setInitialIcons();
     }, 500);
   }
-  setNewDesktop(fileID, program, filename, type, shortcut?) {
-    let extension;
-    let img;
+  setNewDesktop(fileID: string, program: string, filename: any, type: string, shortcut?: boolean) {
+    let extension: string;
+    let img: string;
     let stclass = "";
     if (shortcut) {
       stclass = "shortcut";
@@ -2511,35 +2449,35 @@ export class SystemUI extends process {
 
   // --- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- MS WORD Functions() -- -- -- -- -- -- -- -- -- -- -- -//
 
-  newWord(fileID?) {
+  newWord(fileID?: string) {
     const processID = this.newProcess();
     const p = new MsWord(processID, fileID);
-    super.addProcess(processID, "msword", p.windowID, p.description);
-    //super.access();
+    this.addProcess(processID, "msword", p.windowID, p.description);
+    //this.access();
     this.setWindowPosition(p.windowID);
     this.appendTask(processID, "msword", p.windowID, p.description);
     this.setActive(processID);
   }
   // Mail Functions(){
-  newMail(fileID?) {
+  newMail(fileID?: string) {
     const processID = this.newProcess();
     const p = new MailClient(processID);
-    super.addProcess(processID, "mail", p.windowID, p.description);
+    this.addProcess(processID, "mail", p.windowID, p.description);
     this.setWindowPosition(p.windowID);
     this.appendTask(processID, "mail", p.windowID, p.description);
     this.setActive(processID);
     this.attachCreate(p.windowID, fileID);
   }
 
-  newNotepad(fileID?) {
+  newNotepad(fileID?: string) {
    const processID = this.newProcess();
     const p = new Notepad(processID, fileID);
-    super.addProcess(processID, "notepad", p.windowID, p.description);
+    this.addProcess(processID, "notepad", p.windowID, p.description);
     this.setWindowPosition(p.windowID);
     this.appendTask(processID, "notepad", p.windowID, p.description);
     this.setActive(processID);
   }
-  sendEmail(windowId) {
+  sendEmail(windowId: string) {
     const toEmail = $(`#${windowId} input.sendTo`)
       .val()
       .toString()
@@ -2577,10 +2515,9 @@ export class SystemUI extends process {
   }
   // -- -- --- -- --- -- --- -- -- -- - Context Menu's -- --- -- -- --- -- -- -- -- - -- //
   contextMenuInit() {
-    console.log("Context Menu Init");
     const self = this;
-    let file;
-    let filename;
+    let file: { content: any; filename: string; fileID: any; program: any; type: any; };
+    let filename: string;
     $.contextMenu({
       className: "desktop-context-menu",
       selector: ".user-file",
@@ -2636,7 +2573,7 @@ export class SystemUI extends process {
               .on("blur", function () {
                 $(this).removeAttr("contentEditable");
                 $(this).removeAttr("autocomplete");
-                filename = $(this).text();
+                filename = $(this).text().toString();
                 self.rename($(that).attr("fileid"), filename);
               });
             break;
@@ -2766,7 +2703,7 @@ export class SystemUI extends process {
           name: "New",
           accesskey: "O",
           //className: "context-menu-bold",
-          icon: (_opt, $itemElement) => {
+          icon: (_opt: any, $itemElement: { html: (arg0: string) => void; }) => {
             // Set the content to the menu trigger selector and add an bootstrap icon to the item.
             $itemElement.html(
               '<a class="b-new" aria-hidden="true"></a> <p><span class="context-menu-accesskey">N</span>ew</p>',
@@ -2779,7 +2716,7 @@ export class SystemUI extends process {
           name: "Open",
           accesskey: "O",
           //className: "context-menu-bold",
-          icon: (_opt, $itemElement) => {
+          icon: (_opt: any, $itemElement: { html: (arg0: string) => void; }) => {
             // Set the content to the menu trigger selector and add an bootstrap icon to the item.
             $itemElement.html(
               '<a class="b-open" aria-hidden="true"></a> <p><span class="context-menu-accesskey">O</span>pen</p>',
@@ -2797,7 +2734,7 @@ export class SystemUI extends process {
           name: "Save",
           accesskey: "s",
           //className: "context-menu-bold",
-          icon: (_opt, $itemElement) => {
+          icon: (_opt: any, $itemElement: { html: (arg0: string) => void; }) => {
             // Set the content to the menu trigger selector and add an bootstrap icon to the item.
             $itemElement.html(
               '<a class="b-save" aria-hidden="true"></a> <p><span class="context-menu-accesskey">S</span>ave</p>',
@@ -2831,7 +2768,7 @@ export class SystemUI extends process {
           accesskey: "v",
 
           //className: "context-menu-bold",
-          icon: (_opt, $itemElement) => {
+          icon: (_opt: any, $itemElement: { html: (arg0: string) => void; }) => {
             // Set the content to the menu trigger selector and add an bootstrap icon to the item.
             $itemElement.html(
               '<a class="b-preview" aria-hidden="true"></a> <p>Print Pre<span class="context-menu-accesskey">v</span>iew </p>',
@@ -2845,7 +2782,7 @@ export class SystemUI extends process {
           name: "Print",
           accesskey: "P",
           //className: "context-menu-bold",
-          icon: (_opt, $itemElement) => {
+          icon: (_opt: any, $itemElement: { html: (arg0: string) => void; }) => {
             // Set the content to the menu trigger selector and add an bootstrap icon to the item.
             $itemElement.html(
               '<a class="b-print" aria-hidden="true"></a> <p><span class="context-menu-accesskey">P</span>rint</p>',
@@ -2862,7 +2799,7 @@ export class SystemUI extends process {
             mail: {
               name: "Mail Recipient",
               accesskey: "M",
-              icon: (_opt, $itemElement) => {
+              icon: (_opt: any, $itemElement: { html: (arg0: string) => void; }) => {
                 // Set the content to the menu trigger selector and add an bootstrap icon to the item.
                 $itemElement.html(
                   '<a class="b-mail" aria-hidden="true"></a> <p><span class="context-menu-accesskey">M</span>ail Recipient...</p>',
@@ -3051,8 +2988,11 @@ export class SystemUI extends process {
       //appendTo: '#word-1 > div.window-border > div.menu-bar.h-count > a.file',
       trigger: "left",
       position: function (opt) {
+        const newOpt: JQuery & { $menu: JQuery } = opt as unknown as JQuery & {
+          $menu: JQuery;
+        };
         const a = this.offset();
-        opt.$menu.css({
+        newOpt.$menu.css({
           top: a.top + 10,
           left: a.left - 10,
         });

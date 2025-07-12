@@ -104,8 +104,7 @@ module.exports = {
         { from: 'app/sounds', to: 'sounds' },
         { from: 'app/styles/jquery-ui.css', to: 'styles/jquery-ui.css' },
         { from: 'app/favicon.ico', to: 'favicon.ico' },
-        { from: 'app/robots.txt', to: 'robots.txt' },
-        { from: 'app/vendor', to: 'vendor' }, // Copy all vendor JS/CSS
+        { from: 'app/robots.txt', to: 'robots.txt' }
       ],
     }),
     new ProvidePlugin({
@@ -155,9 +154,16 @@ module.exports = {
     },
   },
   devServer: {
-    static: {
-      directory: path.join(__dirname, 'dist'),
-    },
+    static: [{
+      directory: path.join(__dirname, "app/installed-programs"),
+      publicPath: '/installed-programs',
+    }, {
+      directory: path.join(__dirname, "app/images"),
+      publicPath: '/images',
+    }, {
+      directory: path.join(__dirname, "app/sounds"),
+      publicPath: "/sounds",
+    }],
     compress: true,
     port: 9000,
     open: true,

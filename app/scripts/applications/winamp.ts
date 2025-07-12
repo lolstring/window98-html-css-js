@@ -1,5 +1,5 @@
 import Webamp from "webamp/lazy";
-import { Application } from './application.interface';
+import { Application } from './application';
 
 export class Winamp extends Application {
   constructor(processID) {
