@@ -1313,36 +1313,35 @@
     <!-- Create the board itself
      This is done in JavaScript so the board can be dynamically sized-->
     <script type="text/javascript">
-        <! 
         // Create a distinct DIV section for the board, and hide it until it is ready.
         // This is important for slower machines, since the onclick events are
         // available as soon as they are created, even if the board isn't fully built.
         document.writeln('<div id="divBoard" style="visibility:hidden;">');
-    
+
         // By putting the grid into a table cell, nowrap can be used. Good for Opera.
         document.writeln('<table border="0"><tr><td nowrap="nowrap">');
-    
+
         // Build the top line
         document.write('<img src="images/bordertl.gif" alt="" />');
         for (j = 0; j <= maxX; j++) {
             document.write('<img src="images/bordertb.gif" height="10" width="16" alt="" />');
         }
         document.writeln('<img src="images/bordertr.gif" alt="" /><br />');
-    
+
         // Build the top display (# bombs, face, clock)
         document.write('<img src="images/borderlr.gif" height="26" width="10" alt="" />');
         document.write('<a onclick="return bombCountClick()"><img src="images/time0.gif" border="0" name="bomb100s" width="13" height="23" alt="" /><IMG SRC="images/time0.gif" border="0" name="bomb10s" width="13" height="23" alt="" /><img src="images/time0.gif" border="0" name="bomb1s" width="13" height="23" alt="" /></a>');
         document.write('<a onclick="return faceClick()"><img src="images/faceclock.gif" name="face" hspace="' + smileMargin + '" border="0" width="26" height="26" alt="" /></a>');
         document.write('<img src="images/time0.gif" border="0" name="time100s" width="13" height="23" alt="" /><img src="images/time0.gif" border="0" name="time10s" width="13" height="23" alt="" /><img src="images/time0.gif" border="0" name="time1s" width="13" height="23" alt="" />');
         document.writeln('<img src="images/borderlr.gif" height="26" width="10" alt="" /><br />');
-    
+
         // Line between title stuff and the board
         document.write('<img src="images/borderjointl.gif" alt="" />');
         for (j = 0; j <= maxX; j++) {
             document.write('<img src="images/bordertb.gif" height="10" width="16" alt="" />');
         }
         document.writeln('<img src="images/borderjointr.gif" alt="" /><br />');
-    
+
         // Build the main grid itself, placing it on-screen.  Note the l/r edge
         // Also, using a temp string to build line before display.  Speeds up display.
         for (i = 0; i <= maxY; i++) {
@@ -1351,35 +1350,35 @@
                 // IE requires onDragStart, Netscape requires onDrag. Click is handled via onmouseup.
                 document.write('<a onClick="" onmouseover="cursorHoldLoc(' + j + ',' + i + ')" onmouseout="cursorClearLoc(' + j + ',' + i + ')" ondragstart="ignoreDragging()" ondrag="ignoreDragging()" onmousedown="showMouseDown(event);" onmouseup="cellClick(' + j + ',' + i + ', event)">');
                 document.write('<img src="images/blank.gif" name="cellIm' + j + '_' + i + '" border="0" alt="" /></a>');
-    
+
             }
             document.writeln('<img src="images/borderlr.gif" border="0" height="16" width="10" alt="" /><br />');
         }
-    
+
         // Build the bottom line, including corners
         document.write('<img src="images/borderbl.gif" alt="" />');
         for (j = 0; j <= maxX; j++) {
             document.write('<img src="images/bordertb.gif" height="10" width="16" alt="" />');
         }
         document.writeln('<img src="images/borderbr.gif" alt="" /><br />');
-    
-    
+
+
         // Move the help menu over a bit if the game isn't wide enough
         if (maxX == 7) {
             document.getElementById("divMenuHelp").style.left = 70;
         }
-    
+
         // Final settings - populate the board, focus, make the smile face, and create the menus
         faceClick_first();
-    
+
         //end of nowrap table
         document.writeln('</td></tr></table>');
-    
+
         document.writeln('</div>');
-    
+
         // Make the board visible
         document.getElementById("divBoard").style.visibility = "visible";
-    
+
         //-->
     </script>
 </body>

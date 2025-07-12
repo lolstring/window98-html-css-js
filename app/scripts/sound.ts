@@ -1,8 +1,12 @@
 import { Howl } from 'howler';
 
 export class sound {
+  sounds: any[];
+  _spriteMap: { sprite0: string; sprite1: string; sprite2: string; sprite3: string; sprite4: string; sprite5: string; sprite6: string; sprite7: string; sprite8: string; };
+  _sprite: { CHIMES: number[]; CHORD: number[]; DING: number[]; LOGOFF: number[]; NOTIFY: number[]; RECYCLE: number[]; START: number[]; TADA: number[]; TMS: number[]; };
+  sound: any;
   constructor() {
-    var options = {
+    const options = {
       urls: ["../sounds/combinedSound.ogg", "../sounds/combinedSound.m4a", "../sounds/combinedSound.mp3", "../sounds/combinedSound.ac3"],
       sprite: {
         CHIMES: [0, 631.3378684807255],
@@ -39,17 +43,17 @@ export class sound {
     });
     //self.loginEventListeners(true);
   }
-  static toggleSound(enable) {
-    var user = JSON.parse(localStorage.getItem('currentUser'));
+  static toggleSound() {
+    const user = JSON.parse(localStorage.getItem('currentUser'));
     user.pref.sound = !($('.audio-button').hasClass('mute'));
     localStorage.setItem('currentUser', JSON.stringify(user));
-    if ($('.window[program-name="wolf-3d"]').length != 0) {
+    if ($('.window[program-name="wolf-3d"]').length !== 0) {
       if (!($('.audio-button').hasClass('mute'))) {
         console.log('Sound Enabled');
-        document.getElementById('wolf-frame').contentWindow.Wolf.Sound.toggle("enable");
+        (document.getElementById('wolf-frame') as Document)?.contentWindow.Wolf.Sound.toggle("enable");
       } else {
         console.log('Sound Disabled');
-        document.getElementById('wolf-frame').contentWindow.Wolf.Sound.toggle();
+        (document.getElementById('wolf-frame') as Document)?.contentWindow.Wolf.Sound.toggle();
       }
     }
     // if($('.window[program-name="wolf-3d"]').length != 0) {
@@ -58,7 +62,7 @@ export class sound {
   }
   static play(key) {
     if (JSON.parse(localStorage.getItem('currentUser')).pref.sound === true) {
-      var options = {
+      const options = {
         urls: ["../sounds/combinedSound.ogg", "../sounds/combinedSound.m4a", "../sounds/combinedSound.mp3", "../sounds/combinedSound.ac3"],
         sprite: {
           CHIMES: [0, 631.3378684807255],

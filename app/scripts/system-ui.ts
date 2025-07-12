@@ -1,11 +1,7 @@
 import { process } from "./process";
 import { isFirstLogin } from "./util";
 import { MsWord } from "./msword";
-import { Explorer } from "./explorer";
 import { Notepad } from "./notepad";
-import { Minesweeper } from "./minesweeper";
-import { Wolf3d } from "./wolf3d";
-import { Winamp } from "./winamp";
 import { MailClient } from "./mail-client";
 import { programData } from "./program-data";
 import { kernel } from "./kernel";
@@ -14,6 +10,33 @@ import { sound } from './sound';
 let zIndex = 100;
 
 export class SystemUI extends process {
+  botOpen: boolean;
+  botWord: boolean;
+  h: number;
+  w: number;
+  topInit: number;
+  leftInit: number;
+  topVal: number;
+  leftVal: number;
+  totalheight: number;
+  totalwidth: number;
+  offsetpx: number;
+  top1: any;
+  left1: any;
+  taskWidth: number;
+  iconNumber: number;
+  iconTop: number;
+  iconLeft: number;
+  botSave: boolean;
+  ani1: JQuery<HTMLElement>;
+  parentID: any;
+  file: any;
+  fileBlob: string;
+  blob: string;
+  contentDocument: any;
+  filename: any;
+  fileID: any;
+  parentId: any;
   init() {
     this.windowInitalPositionValues();
     this.contextMenuInit();
@@ -287,7 +310,7 @@ export class SystemUI extends process {
     $("#desktop").on("click", ".attach-button", function () {
       self.attach(this);
     });
-    let lol;
+    let lol: string | undefined;
     $("#desktop").on("click", ".user-file-list", function (e) {
       //$('.user-file-list').children().css('background', 'none');
       const a = $(this).children().text();
@@ -297,8 +320,8 @@ export class SystemUI extends process {
       if (e.shiftKey) {
         if (windowType === "attach") {
           $(this).addClass("selected");
-          const oldVal = $(this).closest("[id]").find(".fileID").val();
-          let oldVal1 = $(this).closest("[id]").find(".filename").val();
+          const oldVal = $(this).closest("[id]").find(".fileID").val().toString();
+          let oldVal1 = $(this).closest("[id]").find(".filename").val().toString();
           if (oldVal1.indexOf('"') < 0) oldVal1 = `"${oldVal1}"`;
           //var oldVal2 = $(this).closest('[id]').find('#file-type').val();
           $(this).closest("[id]").find(".filename").val(`${oldVal1} "${a}"`);
@@ -345,7 +368,7 @@ export class SystemUI extends process {
     $("#dialog button").on("click", () => { });
 
     //----------------------------------------------- TaskBar Events ----------------------------------------------//		//
-    $("#menu-2").hover(
+    $("#menu-2").on('hover',
       () => {
         $("#sub-menu-2").css("display", "block");
       },
@@ -360,12 +383,12 @@ export class SystemUI extends process {
         );
       },
     );
-    $(document).mouseup((e) => {
+    $(document).on('mouseup', (e) => {
       const container = $("#start-menu");
 
       if (
-        !container.is(e.target) && // if the target of the click isn't the container...
-        container.has(e.target).length === 0
+        !container.is(e.target as unknown as HTMLElement) && // if the target of the click isn't the container...
+        container.has(e.target as unknown as HTMLElement).length === 0
       ) {
         // ... nor a descendant of the container
         container.slideUp();
@@ -460,12 +483,15 @@ export class SystemUI extends process {
    * @param  {selector}
    * @return {nothing}
    */
-  program(iconSelector) {
+  async program(iconSelector) {
+    let p;
+    let processID;
+
     const selector = $(iconSelector);
     const program = selector.attr("program-name");
     const fileID = selector.attr("fileid");
-    let p;
-    let processID = this.isOpen(fileID);
+
+    processID = this.isOpen(fileID);
     if (processID != null || typeof processID !== "undefined") {
       // console.log('processID' + processID);
       this.setActive(processID);
@@ -475,7 +501,7 @@ export class SystemUI extends process {
         case "msword":
           p = new MsWord(processID, fileID);
           if (this.botOpen === false) {
-            globalBot.agent((a) => {
+            window.globalBot.agent((a) => {
               a.moveTo($(window).width() * 0.75, $(window).height() * 0.75);
               a.speak(
                 "This is Microsoft Word. You can edit files and save them to the desktop which is internally stored to Local Storage. Be careful when you clear cache. You can also download the file to your own computer.",
@@ -488,7 +514,7 @@ export class SystemUI extends process {
           p = new Notepad(processID, fileID);
           break;
         case "mail":
-          globalBot.agent((a) => {
+          window.globalBot.agent((a) => {
             a.moveTo($(window).width() * 0.75, $(window).height() * 0.75);
             a.speak(
               "Welcome to the mail client. You can compose emails here. If you want to get in touch with me contact me on rahulmehra@techgeek.co.in.",
@@ -499,7 +525,7 @@ export class SystemUI extends process {
         case "wolf-3d": {
           const a = this.isRunning(program);
           if (!a) {
-            p = new Wolf3d(processID);
+            p = await import('./wolf3d').then(module => new module.Wolf3d(processID));
           } else {
             this.setActive(a);
           }
@@ -508,7 +534,7 @@ export class SystemUI extends process {
         case "minesweeper": {
           const a = this.isRunning(program);
           if (!a) {
-            p = new Minesweeper(processID);
+            p = await import('./minesweeper').then(module => new module.Minesweeper(processID));
           } else {
             this.setActive(a);
           }
@@ -517,7 +543,7 @@ export class SystemUI extends process {
         case "winamp": {
           const a = this.isRunning(program);
           if (!a) {
-            p = new Winamp(processID);
+            p = await import('./winamp').then(module => new module.Winamp(processID));
           } else {
             this.setActive(a);
           }
@@ -527,7 +553,7 @@ export class SystemUI extends process {
           this.beforeLogoff(true);
           break;
         case "explorer":
-          p = new Explorer(processID, selector.attr("directory"));
+          p = await import('./explorer').then((module) => new module.Explorer(processID, selector.attr("directory")));
           break;
       }
       if (p) {
@@ -558,7 +584,7 @@ export class SystemUI extends process {
     return processID;
   }
   isRunning(program) {
-    let a = false;
+    let a: string | undefined;
     if ($(`.window[program-name="${program}"]`).length !== 0) {
       a = $(`.window[program-name="${program}"]`).attr("pid");
     }
@@ -738,7 +764,8 @@ export class SystemUI extends process {
           $(`.window[pid="${pid}"]`)
             .find(".maximize")
             .css("background-image", "url(../images/window/max.png)");
-          $(`.window[pid="${pid}"]`).draggable("disable").resizable("disable");
+          $(`.window[pid="${pid}"]`).draggable("disable");
+          $(`.window[pid="${pid}"]`).resizable("disable");
         }
       });
     } else if (s === "max") {
@@ -777,7 +804,8 @@ export class SystemUI extends process {
         $(`.window[pid="${pid}"]`)
           .find(".maximize")
           .css("background-image", "url(../images/clippy/window/maximize.png)");
-        $(`.window[pid="${pid}"]`).draggable("enable").resizable("enable");
+        $(`.window[pid="${pid}"]`).draggable("enable");
+        $(`.window[pid="${pid}"]`).resizable("enable");
       }
     }
   }
@@ -899,13 +927,12 @@ export class SystemUI extends process {
     }
   }
   /**
-   * Calculates and Sets the position of the window.
-   * @param {windowID}
-   * @return nothing
-   */
+     * Calculates and Sets the position of the window.
+     * @param {windowId}- The ID of the window to set position for.
+     * @return nothing
+     */
   setWindowPosition(windowId) {
     const pid = $(windowId);
-    console.log(pid);
     if ($(windowId).hasClass("winamp")) return;
     const offset = pid.offset();
     this.top1 = offset.top + this.topVal;
@@ -916,7 +943,8 @@ export class SystemUI extends process {
       top: this.top1,
       left: this.left1,
     });
-    $(windowId).height(this.h * 0.6);
+    // console.log(this.h*0.6);
+    // $(windowId).height(this.h * 0.6);
     //	$(windowId).width(this.w * 0.60);
     $(`${windowId} .document-content`).height(this.h * 0.6);
     //$(windowId + ' .document-content').width(this.w * 0.50);
@@ -1242,7 +1270,7 @@ export class SystemUI extends process {
   }
   //------------------------------------Log off---------------------------------------------------//
 
-  beforeLogoff(destroySession) {
+  beforeLogoff(destroySession = false) {
     const self = this;
     const parentSel = "#logoff";
     if (destroySession) {
@@ -1304,140 +1332,7 @@ export class SystemUI extends process {
   }
   //---------------------------------------------RUN _--------------------------------//
   runInit() {
-    $.widget("ui.combobox", {
-      sendCmd: () => {
-        //$(this.element).trigger('change');
-      },
-      _create: function () {
-        this.wrapper = $("<span>")
-          .addClass("custom-combobox")
-          .insertAfter(this.element);
-
-        this.element.hide();
-        this._createAutocomplete();
-        this._createShowAllButton();
-      },
-
-      _createAutocomplete: function () {
-        const selected = this.element.children(":selected");
-        const value = selected.val() ? selected.text() : "";
-
-        this.input = $("<input>")
-          .appendTo(this.wrapper)
-          .val(value)
-          .attr("tabindex", "0")
-          .addClass(
-            "custom-combobox-input ui-widget ui-widget-content ui-state-default ui-corner-left",
-          )
-          .autocomplete({
-            delay: 0,
-            minLength: 0,
-            source: $.proxy(this, "_source"),
-          })
-          .tooltip({
-            tooltipClass: "ui-state-highlight",
-          });
-
-        this._on(this.input, {
-          autocompleteselect: function (event, ui) {
-            ui.item.option.selected = true;
-            this._trigger("change", event, {
-              item: ui.item.option,
-            });
-
-            this.sendCmd(ui.item.value);
-          },
-
-          autocompletechange: "_removeIfInvalid",
-        });
-      },
-
-      _createShowAllButton: function () {
-        const input = this.input;
-        let wasOpen = false;
-
-        $("<a>")
-          .attr("tabIndex", -1)
-          .appendTo(this.wrapper)
-          .button({
-            icons: {
-              primary: "ui-icon-triangle-1-s",
-            },
-            text: false,
-          })
-          .removeClass("ui-corner-all")
-          .addClass("custom-combobox-toggle ui-corner-right")
-          .mousedown(() => {
-            wasOpen = input.autocomplete("widget").is(":visible");
-          })
-          .click(() => {
-            //input.focus();
-
-            // Close if already visible
-            if (wasOpen) {
-              return;
-            }
-
-            // Pass empty string as value to search for, displaying all results
-            input.autocomplete("search", "");
-          });
-      },
-
-      _source: function (request, response) {
-        const matcher = new RegExp(
-          $.ui.autocomplete.escapeRegex(request.term),
-          "i",
-        );
-        response(
-          this.element.children("option").map(function () {
-            const text = $(this).text();
-            if (this.value && (!request.term || matcher.test(text)))
-              return {
-                label: text,
-                value: text,
-                option: this,
-              };
-          }),
-        );
-      },
-
-      _removeIfInvalid: function (_event, ui) {
-        // Selected an item, nothing to do
-        if (ui.item) {
-          return;
-        }
-
-        // Search for a match (case-insensitive)
-        const value = this.input.val();
-        const valueLowerCase = value.toLowerCase();
-        let valid = false;
-        this.element.children("option").each(function () {
-          if ($(this).text().toLowerCase() === valueLowerCase) {
-            this.selected = valid = true;
-            return false;
-          }
-        });
-
-        // Found a match, nothing to do
-        if (valid) {
-          return;
-        }
-
-        // Remove invalid value
-        this.element.append(
-          $("<option>", {
-            value: this.input.val(),
-            text: this.input.val(),
-          }),
-        );
-        this.input.autocomplete("instance").term = "";
-      },
-
-      _destroy: function () {
-        this.wrapper.remove();
-        this.element.show();
-      },
-    });
+    
     $("#combobox").combobox();
     //End Data*/f
   }
@@ -1513,6 +1408,12 @@ export class SystemUI extends process {
       this.programMinimize(pid);
     });
   }
+  newWinamp() {
+    throw new Error('Method not implemented.');
+  }
+  newWolf() {
+    throw new Error('Method not implemented.');
+  }
   //----------------------------------------------- SAVE/OPEN/ATTACH WINDOW FUNCTIONS -----------------------------------------//
   showOpen(parentId) {
     //e.preventDefault();
@@ -1559,7 +1460,7 @@ export class SystemUI extends process {
     $(saveSel).css("pointer-events", "auto");
 
     if (this.botSave === false) {
-      globalBot.agent((a) => {
+      window.globalBot.agent((a) => {
         a.moveTo(offset.left + 150, offset.top + 150);
         a.speak(
           "You can save to desktop which is internally stored to Local Storage so be careful when you clear cache or you can download it to your own computer.",
@@ -1599,29 +1500,21 @@ export class SystemUI extends process {
       $(iconData).appendTo(content);
     });
   }
-  print(_content) {
-    // $.cachedScript("vendor/jspdf.min.js").done(function(script, textStatus) {
-    //     var printDoc = new jsPDF();
-    //     printDoc.fromHTML(content, 10, 10, {
-    //         'width': 180
-    //     });
-    //     printDoc.autoPrint();
-    //     printDoc.output("dataurlnewwindow");
-    // });
-    return xepOnline.Formatter.Format(`${parentId}-content .document-wrap`, {
-      render: "newwin",
-      filename: "print",
-      //attach:parentId,
-      //fileID:'file-1473946043124'
-    });
+  print(content, fileName = 'Untitled') {
+    const printWindow = window.open('', '', 'height=400,width=800');
+    printWindow.document.body.innerHTML = `<html><head><title>${fileName}</title>`;
+    printWindow.document.body.innerHTML += '</head><body>';
+    printWindow.document.body.innerHTML += content;
+    printWindow.document.body.innerHTML += '</body></html>';
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
   }
   printFile(parentId) {
-    return xepOnline.Formatter.Format(`${parentId}-content .document-wrap`, {
-      render: "newwin",
-      filename: "print",
-      //attach:parentId,
-      //fileID:'file-1473946043124'
-    });
+    const content = $(`#${parentId}-content .document-wrap`).html();
+    const filename = $(`#${parentId}`).attr("document-title");
+    this.print(content, filename);
   }
   open(windowId) {
     const self = this;
@@ -1663,9 +1556,10 @@ export class SystemUI extends process {
               .children()
               .children(".title")
               .text(a.filename);
-            $(`#task-${parentId} p`).text(filename);
+            $(`#task-${parentId} p`).text(a.filename);
             $(parentSel).find(".document-wrap").html(a.content);
-            $(parentSel).attr("fileid", fileID);
+            $(parentSel).attr("fileid", a.fileID);
+            $(parentSel).attr("document-title", a.filename);
             MsWord._wordNumberRemove($(parentSel).attr("docNumber"));
             $(`${parentSel} #open`).css("display", "none");
             $(parentSel).css("pointer-events", "auto");
@@ -1681,9 +1575,9 @@ export class SystemUI extends process {
       } else {
         const a = this.getFileFromLocal(fileID);
         $(parentSel).children().children().children(".title").text(a.filename);
-        $(`#task-${parentId} p`).text(filename);
+        $(`#task-${parentId} p`).text(a.filename);
         $(parentSel).find(".document-wrap").html(a.content);
-        $(parentSel).attr("fileid", fileID);
+        $(parentSel).attr("fileid", a.fileID);
         MsWord._wordNumberRemove($(parentSel).attr("docNumber"));
         $(`${parentSel} #open`).css("display", "none");
         $(parentSel).css("pointer-events", "auto");
@@ -1965,9 +1859,10 @@ export class SystemUI extends process {
     $(`.window[fileid="${fileID}"]`)
       .find(".title")
       .text(filename);
+    $(`.window[fileid="${fileID}"]`).attr("document-title", filename);
     $(`#taskbar [pid="${pid}"] p`).text(filename);
   }
-  saveFile(parentId, filename, type) {
+  async saveFile(parentId, filename, type) {
     //console.log(type);
     /*
     var parentId = $(windowId).closest('[id]').parent().closest('[id]').attr('id');
@@ -1982,25 +1877,26 @@ export class SystemUI extends process {
     });*/
     if (type === "pdf") {
       $(`#${parentId}`).css("pointer-events", "auto");
-      return xepOnline.Formatter.Format(`${parentId}-content .document-wrap`, {
-        render: "download",
-        filename: filename,
-        //attach:parentId,
-        //fileID:'file-1473946043124'
-      });
+      this.printFile(parentId);
+      // return xepOnline.Formatter.Format(`${parentId}-content .document-wrap`, {
+      //   render: "download",
+      //   filename: filename,
+      //   //attach:parentId,
+      //   //fileID:'file-1473946043124'
+      // });
     }
     if (type === "word" || type === "doc") {
       this.convertImagesToBase64(parentId);
-      $.cachedScript("scripts/vendor.js").done(() => {
+      await import('html-docx-js/dist/html-docx').then(async (htmlDocx) => {
         //$.cachedScript("../vendor/html-docx.js").done(function(script, textStatus) {
         const contentDocument = $(`#${parentId}-content`).html();
         const content =
           `<!DOCTYPE html><html><head></head><body>${contentDocument}</body></html>`;
-        const orientation = "potrait";
-        const converted = htmlDocx.asBlob(content, {
-          orientation: orientation,
+        const orientation = "portrait";
+        const converted = htmlDocx.default.asBlob(content, {
+          orientation,
         });
-        saveAs(converted, `${filename}.docx`);
+        await import('file-saver').then((FileSaver)=> FileSaver.saveAs(converted as Blob, `${filename}.docx`));
       });
       $(`#${parentId}`).css("pointer-events", "auto");
       return;
@@ -2135,29 +2031,30 @@ export class SystemUI extends process {
       );
     }
   }
-  fileToBlob(contentDocument, type, callback) {
-    this.blob = "";
-    this.contentDocument = contentDocument;
+  async fileToBlob(contentDocument, type, callback) {
+    let blob;
+    let cd = contentDocument;
     if (type === "word" || type === "doc") {
-      $.cachedScript("scripts/vendor.js").done(() => {
+      await import("html-docx-js/dist/html-docx").then(async (htmlToDocx) => {
         //$.cachedScript("vendor/html-docx.js").done(function(script, textStatus) {
         const content =
-          `<!DOCTYPE html><html><head></head><body>${contentDocument}</body></html>`;
-        const orientation = "potrait";
-        this.blob = htmlDocx.asBlob(content, {
-          orientation: orientation,
+          `<!DOCTYPE html><html><head></head><body>${cd}</body></html>`;
+        const orientation = "portrait";
+        blob = htmlToDocx.default.asBlob(content, {
+          orientation,
         });
-        callback(this.blob);
+        
+        callback(blob);
       });
     } else if (type === "text" || type === "txt") {
-      const contentTxt = contentDocument.trim();
-      this.blob = new Blob([contentTxt], {
+      const contentTxt = cd.trim();
+      blob = new Blob([contentTxt], {
         type: "text/plain;charset=utf-8",
       });
-      callback(this.blob);
+      callback(blob);
     } else {
-      this.blob = "blobError";
-      callback(this.blob);
+      blob = "blobError";
+      callback(blob);
     }
   }
   attachPDFData(parentId, fileID, filename) {
@@ -2578,7 +2475,7 @@ export class SystemUI extends process {
       $("#desktop-icons").setInitialIcons();
     }, 500);
   }
-  setNewDesktop(fileID, program, filename, type, shortcut) {
+  setNewDesktop(fileID, program, filename, type, shortcut?) {
     let extension;
     let img;
     let stclass = "";
@@ -2614,7 +2511,7 @@ export class SystemUI extends process {
 
   // --- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- MS WORD Functions() -- -- -- -- -- -- -- -- -- -- -- -//
 
-  newWord(fileID) {
+  newWord(fileID?) {
     const processID = this.newProcess();
     const p = new MsWord(processID, fileID);
     super.addProcess(processID, "msword", p.windowID, p.description);
@@ -2624,7 +2521,7 @@ export class SystemUI extends process {
     this.setActive(processID);
   }
   // Mail Functions(){
-  newMail(fileID) {
+  newMail(fileID?) {
     const processID = this.newProcess();
     const p = new MailClient(processID);
     super.addProcess(processID, "mail", p.windowID, p.description);
@@ -2633,14 +2530,25 @@ export class SystemUI extends process {
     this.setActive(processID);
     this.attachCreate(p.windowID, fileID);
   }
+
+  newNotepad(fileID?) {
+   const processID = this.newProcess();
+    const p = new Notepad(processID, fileID);
+    super.addProcess(processID, "notepad", p.windowID, p.description);
+    this.setWindowPosition(p.windowID);
+    this.appendTask(processID, "notepad", p.windowID, p.description);
+    this.setActive(processID);
+  }
   sendEmail(windowId) {
     const toEmail = $(`#${windowId} input.sendTo`)
       .val()
+      .toString()
       .split(",");
     const ccEmail = $(`#${windowId} input.sendToCC`)
       .val()
+      .toString()
       .split(",");
-    if (toEmail > 1) {
+    if (toEmail.length > 1) {
       SystemUI.setDialogBox(
         windowId,
         "Email address",
@@ -2648,7 +2556,7 @@ export class SystemUI extends process {
         "Please enter only 1 email address to send an email to",
       );
     }
-    if (ccEmail > 1) {
+    if (ccEmail.length > 1) {
       SystemUI.setDialogBox(
         windowId,
         "Email address",
@@ -2685,7 +2593,7 @@ export class SystemUI extends process {
             break;
           case "print":
             file = self.getFileFromLocal($(this).attr("fileid"));
-            self.print(file.content);
+            self.print(file.content, file.filename);
             break;
           case "desktop":
             alert(k);
@@ -2719,7 +2627,7 @@ export class SystemUI extends process {
             self.properties($(this).attr("fileid"));
             break;
           case "rename":
-            $(this).children().children().attr("contentEditable", true);
+            $(this).children().children().attr("contentEditable", "true");
             $(this).children().children().focus();
             that = this;
             $(this)
@@ -2797,8 +2705,13 @@ export class SystemUI extends process {
       //appendTo: '#word-1 > div.window-border > div.menu-bar.h-count > a.file',
       trigger: "left",
       position: function (opt) {
+        // The type in the typedef is incomplete, so override
+        const newOpt: JQuery & { $menu: JQuery } = opt as unknown as JQuery & {
+          $menu: JQuery;
+        };
         const a = this.offset();
-        opt.$menu.css({
+        // ts-ignore-next-line
+        newOpt.$menu.css({
           top: a.top + 10,
           left: a.left - 10,
         });

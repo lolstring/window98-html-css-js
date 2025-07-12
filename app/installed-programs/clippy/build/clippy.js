@@ -30,7 +30,7 @@ clippy.Agent.prototype = {
      * @param {Number} x
      * @param {Number} y
      */
-    gestureAt:function (x, y) {
+    gestureAt: function (x, y) {
         var d = this._getDirection(x, y);
         var gAnim = 'Gesture' + d;
         var lookAnim = 'Look' + d;
@@ -44,7 +44,7 @@ clippy.Agent.prototype = {
      * @param {Boolean=} fast
      *
      */
-    hide:function (fast, callback) {
+    hide: function (fast, callback) {
         this._hidden = true;
         var el = this._el;
         this.stop();
@@ -64,7 +64,7 @@ clippy.Agent.prototype = {
     },
 
 
-    moveTo:function (x, y, duration) {
+    moveTo: function (x, y, duration) {
         var dir = this._getDirection(x, y);
         var anim = 'Move' + dir;
         if (duration === undefined) duration = 1000;
@@ -72,7 +72,7 @@ clippy.Agent.prototype = {
         this._addToQueue(function (complete) {
             // the simple case
             if (duration === 0) {
-                this._el.css({top:y, left:x});
+                this._el.css({ top: y, left: x });
                 this.reposition();
                 complete();
                 return;
@@ -80,7 +80,7 @@ clippy.Agent.prototype = {
 
             // no animations
             if (!this.hasAnimation(anim)) {
-                this._el.animate({top:y, left:x}, duration, complete);
+                this._el.animate({ top: y, left: x }, duration, complete);
                 return;
             }
 
@@ -91,7 +91,7 @@ clippy.Agent.prototype = {
                 }
                 // if waiting,
                 if (state === clippy.Animator.States.WAITING) {
-                    this._el.animate({top:y, left:x}, duration, $.proxy(function () {
+                    this._el.animate({ top: y, left: x }, duration, $.proxy(function () {
                         // after we're done with the movement, do the exit animation
                         this._animator.exitAnimation();
                     }, this));
@@ -103,7 +103,7 @@ clippy.Agent.prototype = {
         }, this);
     },
 
-    _playInternal:function (animation, callback) {
+    _playInternal: function (animation, callback) {
 
         // if we're inside an idle animation,
         if (this._isIdleAnimation() && this._idleDfd && this._idleDfd.state() === 'pending') {
@@ -115,7 +115,7 @@ clippy.Agent.prototype = {
         this._animator.showAnimation(animation, callback);
     },
 
-    play:function (animation, timeout, cb) {
+    play: function (animation, timeout, cb) {
         if (!this.hasAnimation(animation)) return false;
 
         if (timeout === undefined) timeout = 5000;
@@ -151,7 +151,7 @@ clippy.Agent.prototype = {
      *
      * @param {Boolean=} fast
      */
-    show:function (fast) {
+    show: function (fast) {
 
         this._hidden = false;
         if (fast) {
@@ -164,7 +164,7 @@ clippy.Agent.prototype = {
         if (this._el.css('top') === 'auto' || !this._el.css('left') === 'auto') {
             var left = $(window).width() * 0.8;
             var top = ($(window).height() + $(document).scrollTop()) * 0.8;
-            this._el.css({top:top, left:left});
+            this._el.css({ top: top, left: left });
         }
 
         this.resume();
@@ -175,7 +175,7 @@ clippy.Agent.prototype = {
      *
      * @param {String} text
      */
-    speak:function (text, hold) {
+    speak: function (text, hold) {
         this._addToQueue(function (complete) {
             this._balloon.speak(complete, text, hold);
         }, this);
@@ -185,11 +185,11 @@ clippy.Agent.prototype = {
     /***
      * Close the current balloon
      */
-    closeBalloon:function () {
+    closeBalloon: function () {
         this._balloon.hide();
     },
 
-    delay:function (time) {
+    delay: function (time) {
         time = time || 250;
 
         this._addToQueue(function (complete) {
@@ -201,13 +201,13 @@ clippy.Agent.prototype = {
     /***
      * Skips the current animation
      */
-    stopCurrent:function () {
+    stopCurrent: function () {
         this._animator.exitAnimation();
         this._balloon.close();
     },
 
 
-    stop:function () {
+    stop: function () {
         // clear the queue
         this._queue.clear();
         this._animator.exitAnimation();
@@ -219,7 +219,7 @@ clippy.Agent.prototype = {
      * @param {String} name
      * @returns {Boolean}
      */
-    hasAnimation:function (name) {
+    hasAnimation: function (name) {
         return this._animator.hasAnimation(name);
     },
 
@@ -228,7 +228,7 @@ clippy.Agent.prototype = {
      *
      * @return {Array.<string>}
      */
-    animations:function () {
+    animations: function () {
         return this._animator.animations();
     },
 
@@ -236,7 +236,7 @@ clippy.Agent.prototype = {
      * Play a random animation
      * @return {jQuery.Deferred}
      */
-    animate:function () {
+    animate: function () {
         var animations = this.animations();
         var anim = animations[Math.floor(Math.random() * animations.length)];
         // skip idle animations
@@ -255,7 +255,7 @@ clippy.Agent.prototype = {
      * @return {String}
      * @private
      */
-    _getDirection:function (x, y) {
+    _getDirection: function (x, y) {
         var offset = this._el.offset();
         var h = this._el.height();
         var w = this._el.width();
@@ -286,7 +286,7 @@ clippy.Agent.prototype = {
      * We need to transition the animation to an idle state
      * @private
      */
-    _onQueueEmpty:function () {
+    _onQueueEmpty: function () {
         if (this._hidden || this._isIdleAnimation()) return;
         var idleAnim = this._getIdleAnimation();
         this._idleDfd = $.Deferred();
@@ -294,7 +294,7 @@ clippy.Agent.prototype = {
         this._animator.showAnimation(idleAnim, $.proxy(this._onIdleComplete, this));
     },
 
-    _onIdleComplete:function (name, state) {
+    _onIdleComplete: function (name, state) {
         if (state === clippy.Animator.States.EXITED) {
             this._idleDfd.resolve();
         }
@@ -306,7 +306,7 @@ clippy.Agent.prototype = {
      * @return {Boolean}
      * @private
      */
-    _isIdleAnimation:function () {
+    _isIdleAnimation: function () {
         var c = this._animator.currentAnimationName;
         return c && c.indexOf('Idle') === 0;
     },
@@ -317,7 +317,7 @@ clippy.Agent.prototype = {
      * @return {String}
      * @private
      */
-    _getIdleAnimation:function () {
+    _getIdleAnimation: function () {
         var animations = this.animations();
         var r = [];
         for (var i = 0; i < animations.length; i++) {
@@ -334,7 +334,7 @@ clippy.Agent.prototype = {
 
     /**************************** Events ************************************/
 
-    _setupEvents:function () {
+    _setupEvents: function () {
         $(window).on('resize', $.proxy(this.reposition, this));
 
         this._el.on('mousedown', $.proxy(this._onMouseDown, this));
@@ -342,13 +342,13 @@ clippy.Agent.prototype = {
         this._el.on('dblclick', $.proxy(this._onDoubleClick, this));
     },
 
-    _onDoubleClick:function () {
+    _onDoubleClick: function () {
         if (!this.play('ClickedOn')) {
             this.animate();
         }
     },
 
-    reposition:function () {
+    reposition: function () {
         if (!this._el.is(':visible')) return;
         var o = this._el.offset();
         var bH = this._el.outerHeight();
@@ -374,12 +374,12 @@ clippy.Agent.prototype = {
             left = wW - bW - m;
         }
 
-        this._el.css({left:left, top:top});
+        this._el.css({ left: left, top: top });
         // reposition balloon
         this._balloon.reposition();
     },
 
-    _onMouseDown:function (e) {
+    _onMouseDown: function (e) {
         e.preventDefault();
         this._startDrag(e);
     },
@@ -387,7 +387,7 @@ clippy.Agent.prototype = {
 
     /**************************** Drag ************************************/
 
-    _startDrag:function (e) {
+    _startDrag: function (e) {
         // pause animations
         this.pause();
         this._balloon.hide(true);
@@ -402,23 +402,23 @@ clippy.Agent.prototype = {
         this._dragUpdateLoop = window.setTimeout($.proxy(this._updateLocation, this), 10);
     },
 
-    _calculateClickOffset:function (e) {
+    _calculateClickOffset: function (e) {
         var mouseX = e.pageX;
         var mouseY = e.pageY;
         var o = this._el.offset();
         return {
-            top:mouseY - o.top,
-            left:mouseX - o.left
+            top: mouseY - o.top,
+            left: mouseX - o.left
         }
 
     },
 
-    _updateLocation:function () {
-        this._el.css({top:this._targetY, left:this._taregtX});
+    _updateLocation: function () {
+        this._el.css({ top: this._targetY, left: this._taregtX });
         this._dragUpdateLoop = window.setTimeout($.proxy(this._updateLocation, this), 10);
     },
 
-    _dragMove:function (e) {
+    _dragMove: function (e) {
         e.preventDefault();
         var x = e.clientX - this._offset.left;
         var y = e.clientY - this._offset.top;
@@ -426,7 +426,7 @@ clippy.Agent.prototype = {
         this._targetY = y;
     },
 
-    _finishDrag:function () {
+    _finishDrag: function () {
         window.clearTimeout(this._dragUpdateLoop);
         // remove handles
         $(window).off('mousemove', this._moveHandle);
@@ -438,20 +438,20 @@ clippy.Agent.prototype = {
 
     },
 
-    _addToQueue:function (func, scope) {
+    _addToQueue: function (func, scope) {
         if (scope) func = $.proxy(func, scope);
         this._queue.queue(func);
     },
 
     /**************************** Pause and Resume ************************************/
 
-    pause:function () {
+    pause: function () {
         this._animator.pause();
         this._balloon.pause();
 
     },
 
-    resume:function () {
+    resume: function () {
         this._animator.resume();
         this._balloon.resume();
     }
@@ -490,16 +490,16 @@ clippy.Animator = function (el, path, data, sounds) {
 };
 
 clippy.Animator.prototype = {
-    _setupElement:function (el) {
+    _setupElement: function (el) {
         var frameSize = this._data.framesize;
         el.css('display', "none");
-        el.css({width:frameSize[0], height:frameSize[1]});
+        el.css({ width: frameSize[0], height: frameSize[1] });
         el.css('background', "url('" + this._path + "/map.png') no-repeat");
 
         return el;
     },
 
-    animations:function () {
+    animations: function () {
         var r = [];
         var d = this._data.animations;
         for (var n in d) {
@@ -508,7 +508,7 @@ clippy.Animator.prototype = {
         return r;
     },
 
-    preloadSounds:function (sounds) {
+    preloadSounds: function (sounds) {
 
         for (var i = 0; i < this._data.sounds.length; i++) {
             var snd = this._data.sounds[i];
@@ -518,16 +518,16 @@ clippy.Animator.prototype = {
 
         }
     },
-    hasAnimation:function (name) {
+    hasAnimation: function (name) {
         return !!this._data.animations[name];
     },
 
-    exitAnimation:function () {
+    exitAnimation: function () {
         this._exiting = true;
     },
 
 
-    showAnimation:function (animationName, stateChangeCallback) {
+    showAnimation: function (animationName, stateChangeCallback) {
         this._exiting = false;
 
         if (!this.hasAnimation(animationName)) {
@@ -551,7 +551,7 @@ clippy.Animator.prototype = {
     },
 
 
-    _draw:function () {
+    _draw: function () {
         var images = [];
         if (this._currentFrame) images = this._currentFrame.images || [];
 
@@ -559,7 +559,7 @@ clippy.Animator.prototype = {
             if (i < images.length) {
                 var xy = images[i];
                 var bg = -xy[0] + 'px ' + -xy[1] + 'px';
-                this._overlays[i].css({'background-position':bg, 'display':'block'});
+                this._overlays[i].css({ 'background-position': bg, 'display': 'block' });
             }
             else {
                 this._overlays[i].css('display', 'none');
@@ -568,7 +568,7 @@ clippy.Animator.prototype = {
         }
     },
 
-    _getNextAnimationFrame:function () {
+    _getNextAnimationFrame: function () {
         if (!this._currentAnimation) return undefined;
         // No current frame. start animation.
         if (!this._currentFrame) return 0;
@@ -594,18 +594,18 @@ clippy.Animator.prototype = {
         return this._currentFrameIndex + 1;
     },
 
-    _playSound:function () {
+    _playSound: function () {
         var s = this._currentFrame.sound;
         if (!s) return;
         var audio = this._sounds[s];
         if (audio && JSON.parse(localStorage.getItem('currentUser')).pref.sound === true) audio.play();
     },
 
-    _atLastFrame:function () {
+    _atLastFrame: function () {
         return this._currentFrameIndex >= this._currentAnimation.frames.length - 1;
     },
 
-    _step:function () {
+    _step: function () {
         if (!this._currentAnimation) return;
         var newFrameIndex = Math.min(this._getNextAnimationFrame(), this._currentAnimation.frames.length - 1);
         var frameChanged = !this._currentFrame || this._currentFrameIndex !== newFrameIndex;
@@ -636,19 +636,19 @@ clippy.Animator.prototype = {
     /***
      * Pause animation execution
      */
-    pause:function () {
+    pause: function () {
         window.clearTimeout(this._loop);
     },
 
     /***
      * Resume animation
      */
-    resume:function () {
+    resume: function () {
         this._step();
     }
 };
 
-clippy.Animator.States = { WAITING:1, EXITED:0 };
+clippy.Animator.States = { WAITING: 1, EXITED: 0 };
 
 /******
  *
@@ -664,10 +664,10 @@ clippy.Balloon = function (targetEl) {
 
 clippy.Balloon.prototype = {
 
-    WORD_SPEAK_TIME:320,
-    CLOSE_BALLOON_DELAY:2000,
+    WORD_SPEAK_TIME: 320,
+    CLOSE_BALLOON_DELAY: 2000,
 
-    _setup:function () {
+    _setup: function () {
 
         this._balloon = $('<div class="clippy-balloon"><div class="clippy-tip"></div><div class="clippy-content"></div></div> ').hide();
         this._content = this._balloon.find('.clippy-content');
@@ -675,7 +675,7 @@ clippy.Balloon.prototype = {
         $(document.body).append(this._balloon);
     },
 
-    reposition:function () {
+    reposition: function () {
         var sides = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
 
         for (var i = 0; i < sides.length; i++) {
@@ -685,14 +685,14 @@ clippy.Balloon.prototype = {
         }
     },
 
-    _BALLOON_MARGIN:15,
+    _BALLOON_MARGIN: 15,
 
     /***
      *
      * @param side
      * @private
      */
-    _position:function (side) {
+    _position: function (side) {
         var o = this._targetEl.offset();
         var h = this._targetEl.height();
         var w = this._targetEl.width();
@@ -729,11 +729,11 @@ clippy.Balloon.prototype = {
                 break;
         }
 
-        this._balloon.css({top:top, left:left});
+        this._balloon.css({ top: top, left: left });
         this._balloon.addClass('clippy-' + side);
     },
 
-    _isOut:function () {
+    _isOut: function () {
         var o = this._balloon.offset();
         var bH = this._balloon.outerHeight();
         var bW = this._balloon.outerWidth();
@@ -752,7 +752,7 @@ clippy.Balloon.prototype = {
         return false;
     },
 
-    speak:function (complete, text, hold) {
+    speak: function (complete, text, hold) {
         this._hidden = false;
         this.show();
         var c = this._content;
@@ -771,12 +771,12 @@ clippy.Balloon.prototype = {
         this._sayWords(text, hold, complete);
     },
 
-    show:function () {
+    show: function () {
         if (this._hidden) return;
         this._balloon.show();
     },
 
-    hide:function (fast) {
+    hide: function (fast) {
         if (fast) {
             this._balloon.hide();
             return;
@@ -785,14 +785,14 @@ clippy.Balloon.prototype = {
         this._hiding = window.setTimeout($.proxy(this._finishHideBalloon, this), this.CLOSE_BALLOON_DELAY);
     },
 
-    _finishHideBalloon:function () {
+    _finishHideBalloon: function () {
         if (this._active) return;
         this._balloon.hide();
         this._hidden = true;
         this._hiding = null;
     },
 
-    _sayWords:function (text, hold, complete) {
+    _sayWords: function (text, hold, complete) {
         this._active = true;
         this._hold = hold;
         var words = text.split(/[^\S-]/);
@@ -820,7 +820,7 @@ clippy.Balloon.prototype = {
 
     },
 
-    close:function () {
+    close: function () {
         if (this._active) {
             this._hold = false;
         } else if (this._hold) {
@@ -828,7 +828,7 @@ clippy.Balloon.prototype = {
         }
     },
 
-    pause:function () {
+    pause: function () {
         window.clearTimeout(this._loop);
         if (this._hiding) {
             window.clearTimeout(this._hiding);
@@ -836,15 +836,15 @@ clippy.Balloon.prototype = {
         }
     },
 
-    resume:function () {
-        if (this._addWord)  this._addWord();
+    resume: function () {
+        if (this._addWord) this._addWord();
         this._hiding = window.setTimeout($.proxy(this._finishHideBalloon, this), this.CLOSE_BALLOON_DELAY);
     }
 
 
 };
 
-clippy.BASE_PATH = 'vendor/clippy/Agents/';
+clippy.BASE_PATH = 'installed-programs/clippy/Agents/';
 
 clippy.load = function (name, successCb, failCb) {
     var path = clippy.BASE_PATH + name;
@@ -866,7 +866,7 @@ clippy.load = function (name, successCb, failCb) {
 
     // wrapper to the success callback
     var cb = function () {
-        var a = new clippy.Agent(path, data,sounds);
+        var a = new clippy.Agent(path, data, sounds);
         successCb(a);
     };
 
@@ -979,7 +979,7 @@ clippy.Queue.prototype = {
      * @param {function(Function)} func
      * @returns {jQuery.Deferred}
      */
-    queue:function (func) {
+    queue: function (func) {
         this._queue.push(func);
 
         if (this._queue.length === 1 && !this._active) {
@@ -987,7 +987,7 @@ clippy.Queue.prototype = {
         }
     },
 
-    _progressQueue:function () {
+    _progressQueue: function () {
 
         // stop if nothing left in queue
         if (!this._queue.length) {
@@ -1003,13 +1003,16 @@ clippy.Queue.prototype = {
         f(completeFunction);
     },
 
-    clear:function () {
+    clear: function () {
         this._queue = [];
     },
 
-    next:function () {
+    next: function () {
         this._active = false;
         this._progressQueue();
     }
 };
 
+window.clippy = clippy;
+
+export default clippy;

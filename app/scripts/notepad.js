@@ -13,7 +13,7 @@ export class Notepad {
     const contents = $(doc).html();
     $(doc).blur(function () {
       if (contents !== $(this).html()) {
-        $(this).closest('div[pid]').attr('saved', false);
+        $(this).closest('div[pid]').attr('saved', "false");
       }
     });
 
@@ -192,7 +192,7 @@ export class Notepad {
     });
     return {
       windowID: `#notepad-${this.processID}`,
-      description: this.description
+      description: this.description || 'Untitled - Notepad'
     };
   }
 }

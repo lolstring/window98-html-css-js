@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "lib": ["es6", "dom"],
+    "target": "es2020",
+    "module": "esnext",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist/",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": true,
+    "baseUrl": "./",
+    "paths": {
+      "*": ["app/types/*.d.ts"]
+    }
+  },
+  "include": [
+    "app/**/*.ts",
+    "app/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    "out",
+    "app/installed-programs/*"
+  ]
+}

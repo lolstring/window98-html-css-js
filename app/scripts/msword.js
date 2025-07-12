@@ -244,7 +244,7 @@ export class MsWord {
       d = `${description} (Read Only)`;
     }
     const docData =
-      `<div id="word-${docNumber}" class="word window ui-widget-content" pid="${this.processID}" program-name="msword" document-number=${docNumber} fileID=${this.fileID} saved="true">
+      `<div id="word-${docNumber}" class="word window ui-widget-content" pid="${this.processID}" program-name="msword" document-number=${docNumber} fileID=${this.fileID} document-title=${d} saved="true">
         <div class="window-border">
           <div class="title-bar  h-count" id="parent">
             <div class="control-box">

@@ -1,15 +1,16 @@
 export class Wolf3d {
   constructor(processID) {
     this.processID = processID;
-    var a = this.create();
-    return a;
+    const { windowID, description } = this.create();
+    this.windowID = windowID;
+    this.description = description;
   }
   create() {
-    var a = this.append();
-    return a;
+    return this.append();
   }
+
   append() {
-    var wolfData = ` <div id="wolf" class="wolf window ui-widget-content" program-name="wolf-3d" style="display:block;" pid="${this.processID}">
+    const wolfData = ` <div id="wolf" class="wolf window ui-widget-content" program-name="wolf-3d" style="display:block;" pid="${this.processID}">
             <div class="window-border">
                 <div class="title-bar  h-count" id="parent">
                     <div class="control-box">

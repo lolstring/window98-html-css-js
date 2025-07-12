@@ -115,7 +115,7 @@ export class login {
       console.log('No Storage');
       $('#login').css('display', 'none');
       $('#desktop').css('display', 'block');
-      sound.play('sprite8');
+      // sound.play('sprite8');
     }
   }
   userExists(username) {
@@ -195,11 +195,11 @@ Please see their respective licenses.
   setExistingUser(username) {
     const users = JSON.parse(localStorage.getItem('users'));
     let currentUser;
-    $.each(users.users, function (k, v) {
-      if (this.username === username) {
+    $.each(users.users, (_k, v) => {
+      if (v.username === username) {
 
-        this.lastLogin = Date.now();
-        this.pref.sound = !($('.audio-button').hasClass('mute'));
+        v.lastLogin = Date.now();
+        v.pref.sound = !($('.audio-button').hasClass('mute'));
         currentUser = v;
         return false;
       }
@@ -230,7 +230,7 @@ Please see their respective licenses.
     } else {
       $('#clock > .volume').attr('src', 'images/win98_icons/volumemute.ico');
     }
-    sound.play('sprite8');
+    // sound.play('sprite8');
   }
   loaded() {
     $(window).on('load', () => true);

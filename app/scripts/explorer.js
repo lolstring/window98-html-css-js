@@ -15,7 +15,6 @@ export class Explorer {
     }
     append() {
         const e = kernel.getFileFromLocal('file-0000000000002');
-        console.log(e);
         const iconURL = programData.getIconByType(e.type);
         const iconData = `<div class="folder-icon user-file" tabindex="0" fileID="${e.fileID}" program-name="${e.program}" type="${e.extension}" style="background:url(${iconURL}) no-repeat center top;background-size: 32px; "><p class="text" style="text-align:center;"><span>${e.filename}</span></p></div>`;
         const b = this.getDirectoryContents();

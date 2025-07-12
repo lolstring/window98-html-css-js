@@ -1,4 +1,5 @@
-import clippy from "../vendor/clippy/build/clippy";
+import clippy from "../installed-programs/clippy/build/clippy";
+
 export class bot {
   constructor(el) {
     //super();
