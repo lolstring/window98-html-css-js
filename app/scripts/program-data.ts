@@ -1,5 +1,5 @@
 export const ProgramData = {
-  getIcon: (program) => {
+  getIcon: (program: string): string => {
     const ICON_PATH = '../images/win98_icons/'
     switch (program) {
       case "msword":
@@ -23,7 +23,7 @@ export const ProgramData = {
         return `${ICON_PATH}msie2.ico`;
     }
   },
-  getIconByType: (program) => {
+  getIconByType: (program: string): string | undefined => {
     const ICON_PATH = '../images/win98_icons/'
     switch (program) {
       case "word":

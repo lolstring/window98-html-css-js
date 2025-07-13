@@ -1,18 +1,15 @@
-import { Application } from './application';
+import { Application, type ApplicationConstruct } from './application';
 import { MsWord } from './msword';
 
 export class MailClient extends Application {
-  constructor(processID) {
-    super(processID);
+  create(): ApplicationConstruct {
+    const construct = this.append();
+    this.windowID = construct.windowID;
+    this.description = construct.description;
     this.toolbar();
-    const { windowID, description } = this.create();
-    this.windowID = windowID;
-    this.description = description;
+    return construct;
   }
-  create() {
-    return this.append();
-  }
-  append() {
+  append(): ApplicationConstruct {
     // if(file)
     // {
     // var iconUrl = programData.getIconByType(file.type);
@@ -220,12 +217,14 @@ export class MailClient extends Application {
       if (!cmd) return;
       e.preventDefault();
       try {
-        document.execCommand(cmd, false, null);
-      } catch (e) { }
+        document.execCommand(cmd, false, undefined);
+      } catch (e) { 
+        console.log('No Support', e);
+      }
     });
-    $("select#fontSize").on('change', function (e) {
+    $("select#fontSize").on('change', function (){
 
-      const value = this.value;
+      const value = (this as HTMLSelectElement).value;
       //if (!cmd) return;
       //e.preventDefault();
       try {
@@ -236,21 +235,21 @@ export class MailClient extends Application {
     });
 
     $("select.selectPicker").on('change', (e) => {
-      const el = $(e.currentTarget);
+      const el = $(e.currentTarget) as JQuery<HTMLSelectElement>;
       const cmd = el.data('cmd');
-      const value = el.val().toString();
-      if (!cmd) return;
+      const value = el.val()?.toString() ?? '';
+      if (!cmd || value === undefined) return;
       e.preventDefault();
       try {
-        document.execCommand(cmd, false, value);
+        document.execCommand(cmd, false, value || undefined);
       } catch (e) {
         console.log(e);
       }
     });
-    let range = null;
+    let range: Range | null = null;
     $(".toolbar .b-paste").on('mousedown', (e) => {
       e.stopPropagation();
-      document.execCommand("paste", false, null);
+      document.execCommand("paste", false, undefined);
       //var clipboardText = clipboardData.getData('Text/html');
       //document.execCommand('insertHTML', false, null);
     });
@@ -270,10 +269,10 @@ export class MailClient extends Application {
     });
     $('.toolbar .b-hilite').on('mouseup', (e) => {
       e.stopPropagation();
-      let sel;
+      let sel: Selection | null;
       if (range) {
-        if (window.getSelection) {
-          sel = window.getSelection();
+        sel = window.getSelection();
+        if (sel) {
           sel.removeAllRanges();
           sel.addRange(range);
         }
@@ -306,13 +305,13 @@ export class MailClient extends Application {
     })
     $('.toolbar .b-fontcolor').on('mouseup', (e) => {
       //e.stopPropagation();
-      let sel;
+      let sel: Selection | null;
       if (range) {
-        if (window.getSelection) {
-          sel = window.getSelection();
+        sel = window.getSelection();
+        if (sel) {
           sel.removeAllRanges();
           sel.addRange(range);
-        } 
+        }
       }
       e.stopPropagation();
     });

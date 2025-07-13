@@ -1,3 +1,5 @@
+import db from './storage';
+
 export function completeArr(arr: number[]): number {
   let number = 0;
   loop1:
@@ -25,30 +27,32 @@ export function incrementArr(arr: number[]): number {
 
 export function removeArr(arr: number[], v: number): boolean {
   const index = arr.indexOf(v);
-  Array.isArray(arr);
-  if (index > -1) {
-    arr.splice(index, 1);
-    return true;
+  if (Array.isArray(arr)) {
+    if (index > -1) {
+      arr.splice(index, 1);
+      return true;
+    }
   }
+  return false;
 }
 
-
-export const toType = (obj) => ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
 //Clock//
-
-export function startTime() {
+export function startTime(): void {
   const today = new Date();
-  let h = today.getHours();
-  let m = today.getMinutes();
-  m = checkTime(m);
+  const h = today.getHours();
+  const m = today.getMinutes();
+
+  const formattedM = checkTime(m);
   const suffix = h >= 12 ? "PM" : "AM";
-  h = ((h + 11) % 12 + 1);
-  $('#clock .text').html(`${h}:${m} ${suffix}`);
+  const displayH = ((h + 11) % 12 + 1);
+  
+  $('#clock .text').html(`${displayH}:${formattedM} ${suffix}`);
+  
   setTimeout(startTime, 1000);
 }
 
-export function checkTime(i) {
-  let t = i;
+export function checkTime(i: number): string | number {
+  let t = `${i}`;
   if (i < 10) {
     t = `0${i}`
   }; // add zero in front of numbers < 10
@@ -56,14 +60,39 @@ export function checkTime(i) {
 }
 
 //Universal Logger
-export function log(e) {
+export function log(e: any): void {
   console.log(e);
 }
 
-export function isFirstLogin() {
-  const a = JSON.parse(localStorage.getItem('currentUser'));
-  if (a.creationDate === a.lastLogin) {
+export async function isFirstLogin(): Promise<boolean> {
+  const currentUser = await db.users.filter((obj)=>obj.current === true).first();
+  if (!currentUser || currentUser.creationDate === currentUser.lastLogin) {
     return true;
   }
   return false;
 }
+
+export function parseNumber(str: string | undefined): number {
+  if (str === undefined) {
+    throw new Error("Input string is undefined");
+	}
+  const num = Number.parseInt(str, 10);
+  if (Number.isNaN(num)) {
+    throw new Error("Invalid number");
+  }
+  return num;
+}
+export function findNearestPid(this: any): string | undefined {
+  return $(this).closest("[pid]").attr("pid");
+}
+export function findNearestId(this: any): string | undefined {
+  return $(this).closest("[id]").attr("id");
+}
+export function getWindowDimensions() {
+  const htmlElement = document.querySelector('html');
+  if (!htmlElement) return { width: 800, height: 600 };
+  const width = htmlElement.clientWidth || 800;
+  const height = htmlElement.clientHeight || 600;
+  return { width, height };
+}
+

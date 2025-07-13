@@ -2,20 +2,16 @@ import { completeArr } from '../util';
 import { removeArr } from '../util';
 import { Kernel } from '../kernel';
 import { SystemUI } from '../system-ui';
-import { Application } from './application';
+import { Application, type ApplicationConstruct } from './application';
+import db from '../storage';
 
 export class MsWord extends Application {
-  fileID?: string;
-  constructor(processID: number, fileID: string) {
+  fileID?: number;
+  constructor(processID: number, fileID: number | undefined) {
     super(processID);
     this.fileID = fileID;
-    this.processID = processID;
-    const { windowID, description } = this.create();
-    this.windowID = windowID;
-    this.description = description;
-    this.toolbar();
   }
-  init() { }
+
   saveListener() {
     const doc = $(`[pid="${this.processID}"] .document-wrap`);
     const contents = $(doc).html();
@@ -27,17 +23,19 @@ export class MsWord extends Application {
 
   }
   static execFontSize(size: string, unit: string) {
+    const selection = document.getSelection();
+    if (!selection) return;
     const spanString = $('<span/>', {
-      'text': document.getSelection()
+      'text': selection.toString()
     }).css('font-size', size + unit).prop('outerHTML');
     document.execCommand('insertHTML', false, spanString);
   }
-  static selectHTML() {
-    let sel: Selection;
+  static selectHTML(): Range | null {
+    let sel: Selection | null;
     $('.document-wrap').trigger('blur');
     if (window.getSelection) {
       sel = window.getSelection();
-      if (sel.getRangeAt && sel.rangeCount) {
+      if (sel?.getRangeAt && sel.rangeCount) {
         return sel.getRangeAt(0);
       }
     }
@@ -53,7 +51,7 @@ export class MsWord extends Application {
       if (!cmd) return;
       e.preventDefault();
       try {
-        document.execCommand(cmd, false, null);
+        document.execCommand(cmd, false, undefined);
       } catch (e) {
         console.log(e);
       }
@@ -65,17 +63,14 @@ export class MsWord extends Application {
       range = MsWord.selectHTML();
     })
     $("select#fontSize").on('change', (e) => {
-      let sel: Selection;
-      if (range) {
-        if (window.getSelection) {
-          sel = window.getSelection();
-          sel.removeAllRanges();
-          sel.addRange(range);
-        }
+      const sel = window.getSelection();
+      if (range && sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
       }
       e.stopPropagation();
       const el = $(e.currentTarget);
-      const value = el.val().toString();
+      const value = (el.val() as string);
       //if (!cmd) return;
       //e.preventDefault();
       try {
@@ -86,21 +81,21 @@ export class MsWord extends Application {
     });
 
     $("select.selectPicker").on('change', (e) => {
-      const el = $(e.currentTarget);
+      const el = $(e.currentTarget) as JQuery<HTMLSelectElement>;
       const cmd = el.data('cmd');
-      const value = el.val().toString();
-      if (!cmd) return;
+      const value = el.val()?.toString() ?? undefined;
+      if (!cmd || value === undefined || value === null) return;
       e.preventDefault();
       try {
-        document.execCommand(cmd, false, value);
+        document.execCommand(cmd, false, value || '');
       } catch (e) {
         console.log(e);
       }
     });
-    let range = null;
+    let range: Range | null = null;
     $(".toolbar .b-paste").on('mousedown', (e) => {
       e.stopPropagation();
-      document.execCommand("paste", false, null);
+      document.execCommand("paste", false, undefined);
       //var clipboardText = clipboardData.getData('Text/html');
       //document.execCommand('insertHTML', false, null);
     });
@@ -122,15 +117,10 @@ export class MsWord extends Application {
     });
     $('.toolbar .b-hilite').on('mouseup', (e) => {
       e.stopPropagation();
-      let sel: Selection;
-      $('.document-wrap').blur();
-      if (range) {
-
-        if (window.getSelection) {
-          sel = window.getSelection();
-          sel.removeAllRanges();
-          sel.addRange(range);
-        }
+      const sel = window.getSelection();
+      if (range && sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
       }
     });
 
@@ -161,14 +151,10 @@ export class MsWord extends Application {
     })
     $('.toolbar .b-fontcolor').on('mouseup', (e) => {
       //e.stopPropagation();
-      let sel: Selection;
-      $('.document-wrap').blur();
-      if (range) {
-        if (window.getSelection) {
-          sel = window.getSelection();
-          sel.removeAllRanges();
-          sel.addRange(range);
-        }
+      const sel = window.getSelection();
+      if (range && sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
       }
       e.stopPropagation();
     });
@@ -189,51 +175,69 @@ export class MsWord extends Application {
 
     });
   }
-  create() {
-    const docNumber = MsWord._wordNumberStore();
+  async create(): Promise<ApplicationConstruct> {
+    const docNumber = await MsWord._wordNumberStore();
     let content: string;
     let filename: string;
     let type: string;
     let description: string;
+    let isStatic = false;
     if (this.fileID) {
-      //log(this.fileID);
-      //var file = this.filename.split('.');
-      const file = Kernel.getFileFromLocal(this.fileID);
-      description = `${file.filename} - Microsoft Word`;
-      content = file.content;
-      filename = file.filename;
-      type = file.type;
+      const file = await Kernel.getFileFromLocal(this.fileID);
+      if (file) {
+        description = `${file.filename} - Microsoft Word`;
+        content = file.content;
+        filename = file.filename;
+        type = file.type;
+        isStatic = file.static;
+      } else {
+        // Handle case where file is not found, similar to when this.fileID is not present
+        description = `Document ${docNumber} - Microsoft Word`;
+        content = '<div class="clear"></div>';
+        filename = `Document ${docNumber}`;
+        type = '';
+      }
     } else {
       description = `Document ${docNumber} - Microsoft Word`;
       content = '<div class="clear"></div>';
       filename = `Document ${docNumber}`;
       type = '';
     }
-    const a = this.append(docNumber, filename, content, type, description);
+    const a = this.append(docNumber, filename, content, type, description, isStatic);
     this.saveListener();
     //SystemUI.setWindowPosition(a);
+    this.windowID = a;
+    this.description = description;
+    this.toolbar();
     return {
-      windowID: a,
-      description: description
+      windowID: this.windowID,
+      description: this.description
     };
   }
-  static _wordNumberStore() {
-    const num = JSON.parse(localStorage.getItem('docNumber'));
-    const docNumber = completeArr(num);
-    localStorage.setItem('docNumber', JSON.stringify(num));
-    return docNumber;
+
+  // Function that gets the next document number from the db.msWordCounter. E.g. [1,2,3] returns 4. and [1,2,4] returns 3. and [], returns 1.
+  static async _wordNumberStore() {
+    const arr = await db.msWordCounter.toArray();
+    if (arr.length === 0) {
+      const nextNum = 1;
+      db.msWordCounter.add({ id: nextNum });
+      return nextNum;
+    }
+    const numArr = arr.map(v=>v.id).sort() as number[];
+    const nextNum = completeArr(numArr);
+    db.msWordCounter.add({ id: nextNum });
+    return nextNum;
   }
-  static _wordNumberRemove(v: string) {
-    const intV = Number.parseInt(v);
-    const num = JSON.parse(localStorage.getItem('docNumber'));
-    removeArr(num, intV);
-    localStorage.setItem('docNumber', JSON.stringify(num));
+
+  static async _wordNumberRemove(v: string) {
+    await db.msWordCounter.where({id: v}).delete();
     return true;
   }
-  append(docNumber: number, filename: any, content: any, _type: any, description: any) {
+
+  append(docNumber: number, filename: string, content: string, _type: string, description: string, isStatic: boolean): string {
     let cd = 'contenteditable="true"';
     let d = description;
-    if (this.fileID === 'file-0000000000001' || this.fileID === 'file-0000000000002') {
+    if (isStatic) {
       cd = '';
       d = `${description} (Read Only)`;
     }

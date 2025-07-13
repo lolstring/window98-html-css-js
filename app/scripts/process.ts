@@ -1,8 +1,17 @@
+import db from './storage';
 import { completeArr } from './util';
 import { removeArr } from './util';
 
-export class Process {
-  process = [];
+interface Process {
+  processID: number;
+  program: string;
+  windowID: string;
+  description: string;
+  active: boolean;
+}
+
+export class ProcessManager {
+  process: Process[] = [];
   /** @return {nothing} */
   /**
    * @param  program {string}
@@ -10,27 +19,15 @@ export class Process {
    * @param  description {string}
    * @return {processID}
    */
-  public newProcess(): number {
-    //console.log(typeof processesID);
-    const processID = this.processIDStore();
-    return processID;
-    // else {
-    // 	super.Error('addProcess');
-    // }
-  }
-  /**
-   * Retrieve LocalStorage Process ID 
-   * Increament
-   * Store Back.
-   *
-   * @return {processNumber}
-   */
-  public processIDStore(): number {
-    const num = JSON.parse(localStorage.getItem('processID'));
-    const processNumber = completeArr(num);
-    localStorage.setItem('processID', JSON.stringify(num));
-    return processNumber;
-
+  public async newProcess(): Promise<number> {
+    // Create an empty process entry as a new process lock in the database
+    const processID = await db.processes.add({
+      program: '',
+      windowID: '',
+      description: '',
+      active: false
+    });
+    return processID as number;
   }
   /**
    * Retrieve LocalStorage process ID
@@ -41,46 +38,35 @@ export class Process {
    * @param  {Value to Remove}
    * @return {true/false}
    */
-  processIDRemove(v) {
-    const intV = Number.parseInt(v);
-    const num = JSON.parse(localStorage.getItem('processID'));
-    removeArr(num, intV);
-    localStorage.setItem('processID', JSON.stringify(num));
+  async processIDRemove(v: number): Promise<boolean> {
+    await db.processes.where({ id: v }).delete();
     return true;
   }
 
-  addProcess(processID, program, windowID, description) {
-    this.process.push({
-      processID: processID,
+  async updateProcess(processID: number, program: string, windowID: string, description: string, active = true) {
+    await db.processes.where({ id: processID }).modify({
       program: program,
       windowID: windowID,
       description: description,
-      active: true
+      active
     });
-  }
-
-  removeProcess(processID) {
-    const index = this.process.findIndex((p) => p.processID === processID);
-    if (index !== -1) {
-      this.process.splice(index, 1);
-      this.processIDRemove(processID);
-      return true;
+    if (active) {
+      this.setProcessActive(processID);
     }
   }
 
-  setProcessActive(processID) {
-    const index = this.process.findIndex((p) => p.processID === processID);
-    if (index !== -1) {
-      this.process[index].active = true;
-      return true;
-    }
+  removeProcess(processID: number) {
+    return db.processes.where({ id: processID }).delete();
   }
 
-  setProcessInActive(processID) {
-    const index = this.process.findIndex((p) => p.processID === processID);
-    if (index !== -1) {
-      this.process[index].active = false;
-      return true;
-    }
+  // Ensure only one process is active at a time
+  async setProcessActive(processID: number) {
+    await db.processes.filter((obj) => obj.active === true).modify({ active: false });
+    await db.processes.where({ id: processID }).modify({ active: true });
+  }
+
+  async setProcessInActive(processID: number) {
+    await db.processes.where({ id: processID }).modify({ active: false });
+    return true;
   }
 }

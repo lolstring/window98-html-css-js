@@ -2,7 +2,6 @@ import type { Bot } from '../scripts/bot';
 declare global {
   interface Window {
     globalBot: Bot;
-    xepOnline: any;
   }
   interface JQuery {
     combobox(options?: Partial<JQueryUI.ComboboxOptions>): JQuery;
