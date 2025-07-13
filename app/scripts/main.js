@@ -25,3 +25,7 @@ window.globalBot = new Bot($('body'));
 window.globalBot.switchAgent('Clippy');
 main();
 startTime();
+
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('Unhandled Rejection:', e.printStack);
+});

@@ -1,17 +1,15 @@
-import { Application } from './application';
+import { Application, type ApplicationConstruct } from './application';
 
 export class Wolf3d extends Application {
-  constructor(processID) {
-    super(processID);
-    const { windowID, description } = this.create();
-    this.windowID = windowID;
-    this.description = description;
-  }
-  create() {
-    return this.append();
+  
+  create(): ApplicationConstruct {
+    const construct = this.append();
+    this.windowID = construct.windowID;
+    this.description = construct.description;
+    return construct;
   }
 
-  append() {
+  append(): ApplicationConstruct {
     const wolfData = ` <div id="wolf" class="wolf window ui-widget-content" program-name="wolf-3d" style="display:block;" pid="${this.processID}">
             <div class="window-border">
                 <div class="title-bar  h-count" id="parent">
@@ -34,9 +32,11 @@ export class Wolf3d extends Application {
       containment: "#desktop",
       scroll: false
     });
+    this.windowID = '#wolf';
+    this.description = 'Wolf 3D';
     return {
-      windowID: '#wolf',
-      description: 'Wolf 3D'
+      windowID: this.windowID,
+      description: this.description
     };
   }
 }

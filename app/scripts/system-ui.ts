@@ -1,5 +1,5 @@
-import { Process } from "./process";
-import { isFirstLogin } from "./util";
+import { ProcessManager } from "./process";
+import { findNearestId, findNearestPid, getWindowDimensions, isFirstLogin, parseNumber } from "./util";
 import { MsWord } from "./applications/msword";
 import { Notepad } from "./applications/notepad";
 import { MailClient } from "./applications/mail-client";
@@ -7,34 +7,36 @@ import { ProgramData } from "./program-data";
 import { Kernel } from "./kernel";
 import { Sound } from './sound';
 import type { LaunchableApplications, User, UserFile } from 'application';
+import type { ClippyAgent } from 'clippy';
+import db from './storage';
 
 let zIndex = 100;
 
-export class SystemUI extends Process {
-  botOpen: boolean;
-  botWord: boolean;
-  h: number;
-  w: number;
-  topInit: number;
-  leftInit: number;
-  topVal: number;
-  leftVal: number;
-  totalheight: number;
-  totalwidth: number;
-  offsetpx: number;
-  top1: number;
-  left1: number;
-  taskWidth: number;
-  iconNumber: number;
-  iconTop: number;
-  iconLeft: number;
-  botSave: boolean;
-  init() {
+export class SystemUI extends ProcessManager {
+  botOpen = false;
+  botWord = false;
+  h = 0;
+  w = 0;
+  topInit = 0;
+  leftInit = 0;
+  topVal = 0;
+  leftVal = 0;
+  totalheight = 0;
+  totalwidth = 0;
+  offsetpx = 0;
+  top1 = 0;
+  left1 = 0;
+  taskWidth = 0;
+  iconNumber = 0;
+  iconTop = 0;
+  iconLeft = 0;
+  botSave = false;
+  init(): void {
     this.windowInitalPositionValues();
     this.contextMenuInit();
     this.runInit();
   }
-  eventListeners() {
+  eventListeners(): void {
     /**
      * Desktop Icons
      */
@@ -66,7 +68,7 @@ export class SystemUI extends Process {
      */
 
     $("#desktop").on("click", ".minimize", function () {
-      const pid = Number.parseInt($(this).closest("[pid]").attr("pid"), 10);
+      const pid = parseNumber(findNearestPid.call(this) ?? "0");
       self.minimize(pid);
     });
     /**
@@ -77,7 +79,7 @@ export class SystemUI extends Process {
      */
     $("#desktop").on("click", ".maximize", function () {
       //$('#desktop').trigger('beforeMinimize');
-      const pid = Number.parseInt($(this).closest("[pid]").attr("pid"), 10);
+      const pid = parseNumber(findNearestPid.call(this) ?? "0");
       self.maximize(pid);
     });
 
@@ -100,7 +102,7 @@ export class SystemUI extends Process {
 
       //e.preventDefault();
       if (!(e.currentTarget.id === "dialog")) {
-        self.setActive(Number.parseInt($(this).attr("pid")));
+        self.setActive(parseNumber($(this).attr("pid") ?? "0"));
       }
     });
 
@@ -119,7 +121,7 @@ export class SystemUI extends Process {
       "dblclick",
       ".ui-resizable > div.window-border > .title-bar > .title",
       function () {
-        const pid = Number.parseInt($(this).closest("[pid]").attr("pid"), 10);
+        const pid = parseNumber(findNearestPid.call(this) ?? "0");
         self.maximize(pid);
       },
     );
@@ -131,7 +133,8 @@ export class SystemUI extends Process {
     });
     $("#desktop").on("click", ".b-save", function (e) {
       e.preventDefault();
-      const parentId = $(this).closest("[id]").attr("id");
+      const parentId = findNearestId.call(this);
+      if (!parentId) return;
       self.showSave(parentId);
       // var saveSel = '#' + parentId + ' #save';
       // $(saveSel).css('display', 'block');
@@ -152,7 +155,8 @@ export class SystemUI extends Process {
     });
     $("#desktop").on("click", ".b-open", function (e) {
       e.preventDefault();
-      const parentId = $(this).closest("[id]").attr("id");
+      const parentId = findNearestId.call(this);
+      if (!parentId) return;
       self.showOpen(parentId);
       // var openSel = '#' + parentId + ' #open';
       // $(openSel).css('display', 'block');
@@ -172,14 +176,16 @@ export class SystemUI extends Process {
       // //$(this + "#save").css('left',offset.left);
     });
     $("#desktop").on("click", ".b-print", function () {
-      const parentId = $(this).closest("[id]").attr("id");
+      const parentId = findNearestId.call(this);
+      if (!parentId) return;
       self.printFile(parentId);
     });
     //------------------------------------------------ Mail Events -------------------------------------------------------//
 
     $("#desktop").on("click", ".b-attach", function (e) {
       e.preventDefault();
-      const parentId = $(this).closest("[id]").attr("id");
+      const parentId = findNearestId.call(this);
+      if (!parentId) return;
       const attachSel = `#${parentId} #attach`;
       $(attachSel).css("display", "block");
       // .draggable({
@@ -187,11 +193,13 @@ export class SystemUI extends Process {
       // });
       self.updateContentBox(attachSel);
       const offset = $(attachSel).offset();
-      $(attachSel).css({
-        top: offset.top,
-        left: offset.left,
-        position: "fixed",
-      });
+      if (offset) {
+        $(attachSel).css({
+          top: offset.top,
+          left: offset.left,
+          position: "fixed",
+        });
+      }
       $(`#${parentId}`).closest("[id]").css("pointer-events", "none");
       $(attachSel).css("pointer-events", "auto");
     });
@@ -200,24 +208,26 @@ export class SystemUI extends Process {
     });
     $("#desktop").on("click", ".b-send", function (e) {
       e.preventDefault();
-      self.sendEmail($(this).closest("[id]").attr("id"));
+      const parentId = findNearestId.call(this);
+      if (!parentId) return;
+      self.sendEmail(parentId);
     });
     //------------------------------------------------- RUN EVENTS -------------------------------------------------//
     $("#menu-8").on("click", () => {
       $("#run").draggable({
         handle: ".title-bar",
       });
-      self.setActive(Number.parseInt($("#run").attr("pid"), 10));
+      self.setActive(parseNumber($("#run").attr("pid") ?? "0"));
     });
     $("#run .ok-button").on("click", function () {
       if ($(this).val() === "ok") {
-        self.runProgram($("#run input").val());
+        self.runProgram(($("#run input").val() ?? "").toString());
       } else {
         $("#run").css("display", "none");
       }
     });
     $("#run .close-run,#run .close-button").on("click", function () {
-      const pid = Number.parseInt($(this).closest("[pid]").attr("pid"), 10);
+      const pid = parseNumber(findNearestPid.call(this) ?? "0");
       self.beforeWindow(pid, () => {
         self.programMinimize(pid);
       });
@@ -229,7 +239,10 @@ export class SystemUI extends Process {
       $(this).children().addClass("active");
       //setting file size
       const p1 = $(this).closest("[pid]").attr("id");
-      const file = Kernel.getFileFromLocal($(this).attr("fileid"));
+      const fileId = $(this).attr("fileid");
+      if (!p1 || !fileId) return;
+      const file = Kernel.getFileFromLocal(parseNumber(fileId));
+      if (!file) return;
       const size = Math.round((JSON.stringify(file).length * 2) / 1024);
       $(`#${p1} .box.size`).text(`${size} KB`);
     });
@@ -249,11 +262,11 @@ export class SystemUI extends Process {
       e.preventDefault();
       e.stopPropagation();
 
-      window.open($(this).attr("url"));
+      window.open($(this).attr("url") ?? "");
     });
     //------------------------------------------------ Properties Events --------------------------------------//
     $("#desktop").on("click", ".properties .button", function () {
-      const parentID = $(this).closest("[id]").attr("id");
+      const parentID = findNearestId.call(this);
       $(`#${parentID} .close`).trigger("click");
     });
     //----------------------------------------------- Menu Events ----------------------------------------------------//
@@ -278,12 +291,13 @@ export class SystemUI extends Process {
      * @return {nothing}
      */
     $("#desktop").on("click", ".close-save,	.cancel-button", function () {
-      const parentId = $(this).closest("[id]").attr("id");
+      const parentId = findNearestId.call(this);
       const fatherId = $(this)
         .closest("[id]")
         .parent()
         .closest("[id]")
         .attr("id");
+      if (!parentId || !fatherId) return;
 
       $(`#${fatherId} #${parentId}`).css("display", "none");
       $(`#${fatherId}`).css("pointer-events", "auto");
@@ -293,7 +307,10 @@ export class SystemUI extends Process {
       self.save(this);
     });
     $("#desktop").on("click", ".desktop-ico", function () {
-      $(this).siblings("#save-location").val("desktop");
+      const saveLocation = $(this).siblings("#save-location");
+      if (saveLocation.length) {
+        saveLocation.val("desktop");
+      }
     });
     $("#desktop").on("click", ".open-button", function () {
       self.open(this);
@@ -307,12 +324,12 @@ export class SystemUI extends Process {
       const a = $(this).children().text();
       lol = $(this).attr("type");
       const file = $(this).attr("fileid");
-      const windowType = $(this).closest("[id]").attr("id");
+      const windowType = findNearestPid.call(this);
       if (e.shiftKey) {
         if (windowType === "attach") {
           $(this).addClass("selected");
-          const oldVal = $(this).closest("[id]").find(".fileID").val().toString();
-          let oldVal1 = $(this).closest("[id]").find(".filename").val().toString();
+          const oldVal = ($(this).closest("[id]").find(".fileID").val() ?? "").toString();
+          let oldVal1 = ($(this).closest("[id]").find(".filename").val() ?? "").toString();
           if (oldVal1.indexOf('"') < 0) oldVal1 = `"${oldVal1}"`;
           //var oldVal2 = $(this).closest('[id]').find('#file-type').val();
           $(this).closest("[id]").find(".filename").val(`${oldVal1} "${a}"`);
@@ -321,15 +338,19 @@ export class SystemUI extends Process {
         } else {
           $(".user-file-list").removeClass("selected");
           $(this).closest("[id]").find(".filename").val(a);
-          $(this).closest("[id]").find("#file-type").val(lol);
-          $(this).closest("[id]").find(".fileID").val(file);
+          if (lol !== undefined) {
+            $(this).closest("[id]").find("#file-type").val(lol as string);
+          }
+          if (file !== undefined) {
+            $(this).closest("[id]").find(".fileID").val(file as string);
+          }
         }
       } else {
         $(".user-file-list").removeClass("selected");
         $(this).toggleClass("selected");
         $(this).closest("[id]").find(".filename").val(a);
-        $(this).closest("[id]").find("#file-type").val(lol);
-        $(this).closest("[id]").find(".fileID").val(file);
+          $(this).closest("[id]").find("#file-type").val(lol as string);
+          $(this).closest("[id]").find(".fileID").val(file as string);
       }
       // var a = $(this).children().text();
       // var lol = $(this).attr('type');
@@ -430,7 +451,7 @@ export class SystemUI extends Process {
     );
     $("#desktop").on("click", ".window-open", function (e) {
       e.preventDefault();
-      const pid = Number.parseInt($(this).attr("pid"), 10);
+      const pid = parseNumber($(this).attr("pid") ?? "0");
       //console.log('lol' + $(this).attr('id').replace('task-', ''));
       if (!$(`.window[pid="${pid}"]`).is(":animated")) {
         if ($(this).hasClass("active-task")) {
@@ -451,7 +472,7 @@ export class SystemUI extends Process {
     $("#taskbar .show-desktop").on("click", () => {
       $(".window").each(function () {
         if ($(this)[0].hasAttribute("pid")) {
-          self.minimize(Number.parseInt($(this).attr("pid"), 10));
+          self.minimize(parseNumber($(this).attr("pid") ?? "0"));
         }
       });
     });
@@ -474,49 +495,50 @@ export class SystemUI extends Process {
    * @param  {selector}
    * @return {nothing}
    */
-  async program(iconSelector: HTMLElement) {
+  async program(iconSelector: HTMLElement): Promise<void> {
     let p: LaunchableApplications;
-    let processID: number;
+    let processID: number | undefined;
 
     const selector = $(iconSelector);
     const program = selector.attr("program-name");
-    const fileID = selector.attr("fileid");
-
+    const fileID = selector.attr("fileid") ? parseNumber(selector.attr("fileid")) : undefined;
     processID = this.isOpen(fileID);
     if (typeof processID === 'number' && processID > 0) {
       // console.log('processID' + processID);
       this.setActive(processID);
     } else {
-      processID = this.newProcess();
+      processID = await super.newProcess();
       switch (program) {
         case "msword":
-          p = new MsWord(processID, fileID);
+          p = await new MsWord(processID, fileID).create();
           if (this.botOpen === false) {
-            window.globalBot.agent((a) => {
-              a.moveTo($(window).width() * 0.75, $(window).height() * 0.75);
-              a.speak(
-                "This is Microsoft Word. You can edit files and save them to the desktop which is internally stored to Local Storage. Be careful when you clear cache. You can also download the file to your own computer.",
-              );
-            });
+          window.globalBot.agent((a: ClippyAgent) => {
+            const { width, height } = getWindowDimensions();
+            a.moveTo(width * 0.75, height * 0.75);
+            a.speak(
+              "This is Microsoft Word. You can edit files and save them to the desktop which is internally stored to Local Storage. Be careful when you clear cache. You can also download the file to your own computer.",
+            );
+          });
             this.botWord = true;
           }
           break;
         case "notepad":
-          p = new Notepad(processID, fileID);
+          p = await new Notepad(processID, fileID).create();
           break;
         case "mail":
-          window.globalBot.agent((a) => {
-            a.moveTo($(window).width() * 0.75, $(window).height() * 0.75);
+          window.globalBot.agent((a: ClippyAgent) => {
+            const { width, height } = getWindowDimensions();
+            a.moveTo(width * 0.75, height * 0.75);
             a.speak(
               "Welcome to the mail client. You can compose emails here. If you want to get in touch with me contact me on rahulmehra@techgeek.co.in.",
             );
           });
-          p = new MailClient(processID);
+          p = await new MailClient(processID).create();
           break;
         case "wolf-3d": {
           const a = this.isRunning(program);
           if (!a) {
-            p = await import('./applications/wolf3d').then(module => new module.Wolf3d(processID));
+            p = await import('./applications/wolf3d').then(module => new module.Wolf3d(processID as number));
           } else {
             this.setActive(a);
           }
@@ -525,7 +547,7 @@ export class SystemUI extends Process {
         case "minesweeper": {
           const a = this.isRunning(program);
           if (!a) {
-            p = await import('./applications/minesweeper').then(module => new module.Minesweeper(processID));
+            p = await import('./applications/minesweeper').then(async module => await new module.Minesweeper(processID as number).create());
           } else {
             this.setActive(a);
           }
@@ -534,7 +556,7 @@ export class SystemUI extends Process {
         case "winamp": {
           const a = this.isRunning(program);
           if (!a) {
-            p = await import('./applications/winamp').then(module => new module.Winamp(processID));
+            p = await import('./applications/winamp').then(async module => await new module.Winamp(processID as number).create());
           } else {
             this.setActive(a);
           }
@@ -544,11 +566,11 @@ export class SystemUI extends Process {
           this.beforeLogoff(true);
           break;
         case "explorer":
-          p = await import('./applications/explorer').then((module) => new module.Explorer(processID, selector.attr("directory")));
+          p = await import('./applications/explorer').then(async (module) => await new module.Explorer(processID as number, selector.attr("directory") ?? "").create());
           break;
       }
-      if (p) {
-        this.addProcess(processID, program, p.windowID, p.description);
+      if (p && program) {
+        super.updateProcess(processID, program, p.windowID, p.description);
         this.setWindowPosition(p.windowID);
         this.appendTask(processID, program, p.windowID, p.description);
         this.setActive(processID);
@@ -557,41 +579,43 @@ export class SystemUI extends Process {
       }
     }
   }
-  isOpen(fileID: string) {
-    let processID: string;
-    let wfileID: string;
+  isOpen(fileID: number | undefined): number | undefined {
+    let processID: number | undefined;
     // if ($('.window[fileid="' + fileID + '"]').length != 0) {
     //     processID = $('.window[fileid="' + fileID + '"]').attr('pid');
     // }
     // return processID;
     $(".window").each(function () {
       const $w = $(this);
-      wfileID = $w.attr("fileid");
-      if (fileID === wfileID) {
-        processID = $w.attr("pid");
-        return false;
+      const wfileID = $w.attr("fileid");
+      if (wfileID && fileID === parseNumber(wfileID)) {
+        const pid = $w.attr("pid");
+        if (pid) {
+          processID = parseNumber(pid);
+          return false;
+        }
       }
     });
-    if (processID === undefined || processID === null) {
+    if (processID === undefined) {
       return;
     }
-    return Number.parseInt(processID, 10);
+    return processID;
   }
-  isRunning(program: string) {
-    let a: number | undefined;
+  isRunning(program: string): number | undefined {
+    let a: number | undefined = undefined;
     if ($(`.window[program-name="${program}"]`).length !== 0) {
-      a = Number.parseInt($(`.window[program-name="${program}"]`).attr("pid"), 10);
+      a = parseNumber($(`.window[program-name="${program}"]`).attr("pid") ?? "0");
     }
     return a;
   }
-  close(closeButton: any) {
-    let windowID = $(closeButton).closest("[pid]").attr("id");
+  close(closeButton: HTMLElement): void {
+    let windowID = $(closeButton).closest("[pid]").attr("id") ?? "";
     windowID = `#${windowID}`;
-    const pid = Number.parseInt($(windowID).attr("pid"), 10);
-    const program = $(windowID).attr("program-name");
+    const pid = parseNumber($(windowID).attr("pid") ?? "0");
+    const program = $(windowID).attr("program-name") ?? "";
     switch (program) {
       case "msword":
-        MsWord.remove($(windowID).attr("document-number"), (close: any) => {
+        MsWord.remove($(windowID).attr("document-number") ?? "", (close) => {
           this.programClose(pid, close);
         });
         break;
@@ -599,12 +623,12 @@ export class SystemUI extends Process {
         this.programClose(pid, true);
     }
   }
-  properties(fileID: string) {
-    const processID = this.newProcess();
+  async properties(fileID: number): Promise<void> {
+    const processID = await this.newProcess();
     this.newProperties(processID, fileID);
   }
-  newProperties(processID: number, fileID: string) {
-    const file = this.getFileFromLocal(fileID);
+  async newProperties(processID: number, fileID: number): Promise<void> {
+    const file = await this.getFileFromLocal(fileID) as UserFile;
     const size = JSON.stringify(file).length * 2;
     const cdate = new Date(file.creationDate);
     //var created = cdate.getDay() + ', ' + cdate.getMonth() + cdate.getDate() +', '+ cdate.getFullYear() +' '+ cdate.getHours() +':'+cdate.getMinutes()+':'+cdate.getSeconds()+' ';
@@ -699,20 +723,22 @@ export class SystemUI extends Process {
     $(propertiesData).appendTo("#desktop").show("fast").draggable({
       handle: ".title-bar",
     });
-    const off = $(`.desktop-icon[fileid="${file.fileID}"]`).offset();
+    const off = $(`.desktop-icon[fileid="${file.id}"]`).offset() ?? { top: 0, left: 0 };
+    const { height } = getWindowDimensions();
     off.top =
-      off.top >= $(window).height() / 2 ? $(window).height() / 2 - 32 : off.top;
+      off.top >= height / 2 ? height / 2 - 32 : off.top;
     $(`#properties-${processID}`).css({
       top: off.top + 32,
       left: off.left + 32,
     });
     this.setActive(processID);
   }
-  maximize(pid: number) {
+  maximize(pid: number): void {
     const windowID = $(`.window[pid="${pid}"]`).attr("id");
     if ($(`#${windowID}`).hasClass("wolf")) return;
-    const height = $(window).height() - 22;
-    const s = $(`.window[pid="${pid}"]`).find(".maximize").attr("state");
+    const { width, height: wHeight } = getWindowDimensions();
+    const height = wHeight - 22;
+    const s = $(`.window[pid="${pid}"]`).find(".maximize").attr("state") ?? "";
     if (s === "min") {
       this.beforeWindow(pid, () => {
         if (!$(`.window[pid="${pid}"]`).is(":animated")) {
@@ -721,16 +747,16 @@ export class SystemUI extends Process {
             top: 0,
             left: 0,
             height: `${height}px`,
-            width: $(window).width(),
+            width: width,
           });
           $(`.window[pid="${pid}"]`).find(".maximize").attr("state", "max");
           if ($(`#${windowID}`).hasClass("word")) {
-            const docHeight =
+            const docHeight = (
               height -
-              ($(`#${windowID} .toolbar`).outerHeight() * 3 +
+              (($(`#${windowID} .toolbar`).outerHeight() ?? 0) * 3 +
                 60 +
-                $(`#${windowID} .status-bar`).outerHeight() +
-                $(".title").outerHeight());
+                ($(`#${windowID} .status-bar`).outerHeight() ?? 0) +
+                ($(".title").outerHeight() ?? 0)));
             $(`#${windowID} .document-content`).animate({
               height: `${docHeight}px`,
             });
@@ -758,7 +784,7 @@ export class SystemUI extends Process {
         }
       });
     } else if (s === "max") {
-      const windowData = $(`.window[pid="${pid}"]`).data();
+      const windowData = $(`.window[pid="${pid}"]`).data() as JQuery.PlainObject<any>;
       if (!$(`.window[pid="${pid}"]`).is(":animated")) {
         $(`.window[pid="${pid}"]`).animate({
           opacity: 1,
@@ -798,11 +824,11 @@ export class SystemUI extends Process {
       }
     }
   }
-  minimize(pid: number) {
-    let windowID = $(`.window[pid="${pid}"]`).attr("id");
+  minimize(pid: number): void {
+    let windowID = $(`.window[pid="${pid}"]`).attr("id") ?? "";
     windowID = `#${windowID}`;
     //var pid = $(windowID).attr('pid');
-    const state = $(`.window[pid="${pid}"]`).find(".maximize").attr("state");
+    const state = $(`.window[pid="${pid}"]`).find(".maximize").attr("state") ?? "";
     if (state === "max") {
       this.programMinimize(pid);
     } else if (state === "min") {
@@ -812,14 +838,14 @@ export class SystemUI extends Process {
     }
   }
   //top: 54.3px; left: 634.333px; height: 305.58px; width: 939.5px; z-index: 102; display: block;
-  beforeWindow(pid: number, callback: { (): void; (): void; (): void; (): void; (): void; }) {
+  beforeWindow(pid: number, callback: () => void): void {
     $(`.window[pid="${pid}"]`)
       .promise()
       .done(() => {
         const $windowID = $(`.window[pid="${pid}"]`);
         const originalOffset = $windowID.offset();
-        const originalTop = originalOffset.top;
-        const originalLeft = originalOffset.left;
+        const originalTop = originalOffset?.top ?? 0;
+        const originalLeft = originalOffset?.left ?? 0;
         const originalPosition = $windowID.css("position");
         const originalHeight = $windowID.outerHeight();
         const originalWidth = $windowID.outerWidth();
@@ -827,19 +853,17 @@ export class SystemUI extends Process {
         const originalOpacity = $windowID.css("opacity");
         let originalContentHeight = 0;
         if ($(`.window[pid="${pid}"]`).hasClass("word")) {
-          originalContentHeight = $windowID
-            .find(".document-content")
-            .outerHeight();
+          originalContentHeight = $windowID.find(".document-content").outerHeight() ?? 0;
         } else if ($(`.window[pid="${pid}"]`).hasClass("mail")) {
-          originalContentHeight = $windowID.find(".mail-content").height();
+          originalContentHeight = $windowID.find(".mail-content").outerHeight() ?? 0;
         } else if ($(`.window[pid="${pid}"]`).hasClass("notepad")) {
           originalContentHeight = $windowID
             .find(".document-wrap")
-            .outerHeight();
+            .outerHeight() ?? 0;
         } else if ($(`.window[pid="${pid}"]`).hasClass("explorer")) {
           originalContentHeight = $windowID
             .find("#explorer-content")
-            .outerHeight();
+            .outerHeight() ?? 0;
         }
 
         $windowID.data({
@@ -856,14 +880,14 @@ export class SystemUI extends Process {
       });
   }
 
-  programClose(pid: number, close: boolean) {
+  programClose(pid: number, close: boolean): void {
     if (close === true) {
       this.removeWindow(pid);
       this.removeProcess(pid);
       this.removeTask(pid);
     }
   }
-  programMinimize(pid: number) {
+  programMinimize(pid: number): void {
     this.minimizeWindow(pid);
     this.minimizeTask(pid);
   }
@@ -874,12 +898,12 @@ export class SystemUI extends Process {
    * set process active in process list.
    *
    */
-  setInActive(pid: number) {
-    this.setTaskInActive(pid);
+  setInActive(pid: number): void {
+    this.setTaskInActive();
     this.setProcessInActive(pid);
     this.minimize(pid);
   }
-  setActive(pid: number) {
+  setActive(pid: number): void {
     this.setTaskActive(pid);
     this.setProcessActive(pid);
     this.setWindowActive(pid);
@@ -889,15 +913,15 @@ export class SystemUI extends Process {
    * Set Window Inital positions.
    * @return {nothing}
    */
-  windowInitalPositionValues() {
-    this.h = $(window).height();
-    this.w = $(window).width();
-    this.topInit = this.h / 12;
-    this.leftInit = this.w / 6;
-    this.topVal = this.h / 10;
-    this.leftVal = this.w / 3;
-    this.totalheight = this.h / 4;
-    this.totalwidth = this.w / 2;
+  async windowInitalPositionValues(): Promise<void> {
+    const { width, height } = getWindowDimensions();
+    
+    this.topInit = height / 12;
+    this.leftInit = width / 6;
+    this.topVal = height / 10;
+    this.leftVal = width / 3;
+    this.totalheight = height / 4;
+    this.totalwidth = width / 2;
     this.offsetpx = 32;
     this.top1;
     this.left1;
@@ -905,7 +929,7 @@ export class SystemUI extends Process {
     this.iconNumber = 20;
     this.iconTop = 0;
     this.iconLeft = 0;
-    if (isFirstLogin()) {
+    if (await isFirstLogin()) {
       this.botSave = false;
       this.botOpen = false;
       this.botWord = false;
@@ -920,10 +944,14 @@ export class SystemUI extends Process {
      * @param {windowId}- The ID of the window to set position for.
      * @return nothing
      */
-  setWindowPosition(windowId: string) {
+  setWindowPosition(windowId: string): void {
+    debugger;
+    const { height } = getWindowDimensions();
     const pid = $(windowId);
     if ($(windowId).hasClass("winamp")) return;
     const offset = pid.offset();
+    debugger;
+    if (!offset) return;
     this.top1 = offset.top + this.topVal;
     this.topVal = this.topVal + this.offsetpx;
     this.left1 = offset.left + this.leftVal;
@@ -932,12 +960,8 @@ export class SystemUI extends Process {
       top: this.top1,
       left: this.left1,
     });
-    // console.log(this.h*0.6);
-    // $(windowId).height(this.h * 0.6);
-    //	$(windowId).width(this.w * 0.60);
-    $(`${windowId} .document-content`).height(this.h * 0.6);
-    //$(windowId + ' .document-content').width(this.w * 0.50);
-    $(`${windowId} .mail-content`).height(this.h * 0.6 - 246);
+    $(`${windowId} .document-content`).height(height * 0.6);
+    $(`${windowId} .mail-content`).height(height * 0.6 - 246);
     if (this.topVal > this.totalheight) {
       this.topVal = this.topInit;
       this.leftVal = this.leftVal + 32;
@@ -948,14 +972,15 @@ export class SystemUI extends Process {
     }
   }
 
-  setWindowActive(pid: any) {
-    let windowData: JQuery.PlainObject<any>;
+  setWindowActive(pid: number): void {
+    let windowData: JQuery.PlainObject<any> = {};
     const $pid = $(`.window[pid="${pid}"]`);
-    const state = $pid.find(".maximize").attr("state");
+    const state = $pid.find(".maximize").attr("state") ?? "";
     if (!$(`.window[pid="${pid}"]`).is(":animated")) {
       if ($pid.css("opacity") === "0") {
         if (state === "max") {
-          const height = $(window).height() - $("#taskbar").outerHeight();
+          const { height: wHeight } = getWindowDimensions();
+          const height = wHeight - ($("#taskbar")?.outerHeight() || 27);
           $(`.window[pid="${pid}"]`).animate({
             opacity: 1,
             top: 0,
@@ -964,12 +989,12 @@ export class SystemUI extends Process {
             width: $(window).width(),
           });
           if ($(`.window[pid="${pid}"]`).hasClass("word")) {
-            const docHeight =
+            const docHeight = (
               height -
-              ($(`.window[pid="${pid}"] .toolbar`).outerHeight() * 3 +
+              (($(`.window[pid="${pid}"] .toolbar`).outerHeight() ?? 0) * 3 +
                 48 +
-                $(`.window[pid="${pid}"] .status-bar`).outerHeight() +
-                $(".title").outerHeight());
+                ($(`.window[pid="${pid}"] .status-bar`).outerHeight() ?? 0) +
+                ($(".title").outerHeight() ?? 0)));
             $(`.window[pid="${pid}"] .document-content`).animate({
               height: docHeight,
             });
@@ -1014,13 +1039,14 @@ export class SystemUI extends Process {
     });
     $pid.css("display", "block");
     $(".window").removeClass("active-window");
-    if ($pid.hasClass("winamp")) return;
-    $pid.addClass("active-window");
+    if (!$pid.hasClass("winamp")) {
+      $pid.addClass("active-window");
+    }
   }
-  setWindowInActive() {
+  setWindowInActive(): void {
     $(".window").removeClass("active-window");
   }
-  removeWindow(pid: any) {
+  removeWindow(pid: number): void {
     $(`.window[pid="${pid}"]`).animate({
       opacity: 0,
       top: $(window).height(), // to force the window to minimize at the bottom corner
@@ -1038,7 +1064,7 @@ export class SystemUI extends Process {
         $(`.window[pid="${pid}"]`).remove();
       });
   }
-  minimizeWindow(pid: any) {
+  minimizeWindow(pid: number): void {
     if (!$(`.window[pid="${pid}"]`).is(":animated")) {
       $(`.window[pid="${pid}"]`).animate({
         opacity: 0,
@@ -1058,7 +1084,7 @@ export class SystemUI extends Process {
     }
   }
   // ---------------------------------------------- Shutdown Functions --------------------------------------------------------//
-  shutdown() {
+  shutdown(): void {
     const self = this;
     $("#menu").css("display", "none");
     $("#desktop").css("pointer-events", "none");
@@ -1075,7 +1101,7 @@ export class SystemUI extends Process {
       .off()
       .on("click", function () {
         if ($(this).val() === "ok") {
-          switch ($("input[name=shut]:checked").val()) {
+          switch (($("input[name=shut]:checked").val() ?? "").toString()) {
             case "shutdown":
               self.beforeFinalShutdown("shutdown");
               return;
@@ -1101,7 +1127,7 @@ export class SystemUI extends Process {
         }
       });
   }
-  beforeSystemClose(parentID: string, callback: (e: boolean) => void) {
+  beforeSystemClose(parentID: string, callback: (e: boolean) => void): void {
     let saved = true;
     $(".window").each(function () {
       if ($(this).attr("saved") === "false") {
@@ -1133,7 +1159,7 @@ export class SystemUI extends Process {
       callback(true);
     }
   }
-  beforeFinalShutdown(shut: string) {
+  beforeFinalShutdown(shut: string): void {
     this.beforeSystemClose("shutdown", (e: boolean) => {
       if (e) {
         if (shut === "shutdown") {
@@ -1191,7 +1217,7 @@ export class SystemUI extends Process {
     //    	}
     //    }
   }
-  finalShutdown() {
+  finalShutdown(): void {
     $("body").html("");
     $("body").css("background", "url(../images/shutdown.jpg) no-repeat center");
     Sound.play("sprite3");
@@ -1203,7 +1229,7 @@ export class SystemUI extends Process {
         );
     }, 4000);
   }
-  restart() {
+  restart(): void {
     $("body").html("");
     $("body").css("background", "url(../images/shutdown.jpg) no-repeat center");
     Sound.play("sprite3");
@@ -1211,7 +1237,7 @@ export class SystemUI extends Process {
       location.reload();
     }, 2000);
   }
-  static insertOverlay(id: string, background: boolean) {
+  static insertOverlay(id: string, background: boolean): void {
     let overlayData = "";
     if (background) {
       overlayData = `<div id="overlay" width="100%" height="100%" style="background:url(images/word%20images/background123.png);"></div>`;
@@ -1228,12 +1254,12 @@ export class SystemUI extends Process {
       Sound.play('sprite2');
     });
   }
-  static removeOverlay() {
+  static removeOverlay(): void {
     $("#overlay").each(function () {
       $(this).remove();
     });
   }
-  enterStandby() {
+  enterStandby(): void {
     const standByData = `<div id="standby" style="width:100%; height:100%; position:fixed; top:0; left:0;"></div>`;
     $(standByData).appendTo("body");
     $("#shutdown").css("display", "none");
@@ -1246,7 +1272,7 @@ export class SystemUI extends Process {
         this.exitStandBy();
       });
   }
-  exitStandBy() {
+  exitStandBy(): void {
     SystemUI.removeOverlay();
     $("#standby").remove();
     $("#desktop").css("pointer-events", "auto");
@@ -1254,12 +1280,12 @@ export class SystemUI extends Process {
 
   // ----------------------------------- Destroy Session ---------------------------//
 
-  destroySession() {
-    localStorage.clear();
+  async destroySession() {
+    await db.delete();
   }
   //------------------------------------Log off---------------------------------------------------//
 
-  beforeLogoff(destroySession = false) {
+  beforeLogoff(destroySession = false): void {
     const self = this;
     const parentSel = "#logoff";
     if (destroySession) {
@@ -1304,7 +1330,7 @@ export class SystemUI extends Process {
       $("#logoff p").text("Are you sure you want to logoff?");
     });
   }
-  logoff() {
+  logoff(): void {
     Sound.play("sprite3");
     setTimeout(() => {
       location.reload();
@@ -1320,14 +1346,14 @@ export class SystemUI extends Process {
     // $('#login').css('display','block');
   }
   //---------------------------------------------RUN _--------------------------------//
-  runInit() {
+  runInit(): void {
     
     $("#combobox").combobox();
     //End Data*/f
   }
-  runProgram(value: string | number | string[]) {
+  async runProgram(value: string | number | string[]): Promise<void> {
     const v1 = value.toString().toLowerCase();
-    const pid = Number.parseInt($("#run").attr("pid"), 10);
+    const pid = parseNumber($("#run").attr("pid") ?? "0");
     if (~v1.indexOf("word")) {
       this.newWord();
     } else if (~v1.indexOf("notepad")) {
@@ -1344,7 +1370,7 @@ export class SystemUI extends Process {
       console.log(this.runProgram.toString());
     } else if (~v1.indexOf(".doc")) {
       const newValue = value.toString().replace(".doc", "");
-      const fileId = this.checkIfFileExists(newValue, "doc");
+      const fileId = await this.checkIfFileExists(newValue, "doc");
       if (fileId) {
         this.newWord(fileId);
       } else {
@@ -1358,7 +1384,7 @@ export class SystemUI extends Process {
       }
     } else if (~v1.indexOf(".pdf")) {
       const newValue = value.toString().replace(".pdf", "");
-      const a = this.checkIfFileExists(newValue, "pdf");
+      const a = await this.checkIfFileExists(newValue, "pdf");
       if (a) {
         this.newWord(a);
       } else {
@@ -1372,7 +1398,7 @@ export class SystemUI extends Process {
       }
     } else if (~v1.indexOf(".txt")) {
       const newValue = value.toString().replace(".txt", "");
-      const a = this.checkIfFileExists(newValue, "txt");
+      const a = await this.checkIfFileExists(newValue, "txt");
       if (a) {
         this.newNotepad(a);
       } else {
@@ -1397,14 +1423,14 @@ export class SystemUI extends Process {
       this.programMinimize(pid);
     });
   }
-  newWinamp() {
+  newWinamp(): void {
     throw new Error('Method not implemented.');
   }
-  newWolf() {
+  newWolf(): void {
     throw new Error('Method not implemented.');
   }
   //----------------------------------------------- SAVE/OPEN/ATTACH WINDOW FUNCTIONS -----------------------------------------//
-  showOpen(parentId: string) {
+  showOpen(parentId: string): void {
     //e.preventDefault();
     const openSel = `#${parentId} #open`;
     $(openSel).css("display", "block");
@@ -1412,7 +1438,7 @@ export class SystemUI extends Process {
     // 	handle: '.title-bar'
     // });
     this.updateContentBox(openSel);
-    const offset = $(openSel).offset();
+    const offset = $(openSel).offset() || {top: 0, left: 0};
     $(openSel).css({
       top: offset.top,
       left: offset.left,
@@ -1430,14 +1456,14 @@ export class SystemUI extends Process {
       this.botOpen = true;
     }
   }
-  showSave(parentId: string) {
+  showSave(parentId: string): void {
     const saveSel = `#${parentId} #save`;
     $(saveSel).css("display", "block");
     // .draggable({
     // 	handle: '.title-bar'
     // });
     this.updateContentBox(saveSel);
-    const offset = $(saveSel).offset();
+    const offset = $(saveSel).offset() || {top: 0, left: 0};
     $(saveSel).css({
       top: offset.top,
       left: offset.left,
@@ -1459,38 +1485,46 @@ export class SystemUI extends Process {
     }
   }
 
-  updateContentBox(e: string) {
+  async updateContentBox(e: string): Promise<void> {
     const content = $(`${e} .content1-box`);
     //var childOffset1 ={top,left};
     $(`${e} .user-file-list`).remove();
-    const b = this.getFromLocal();
+    const files = await this.getFromLocal();
     let extension: string;
-    let img: string;
+    let img = '';
     let type: string;
     let filename: any;
 
-    $.each(b, (_i, e) => {
+    // biome-ignore lint/complexity/noForEach: <explanation>
+    files.forEach((file) => {
       //var a = memphis.getDesktopPos();
-      type = e.type;
-      filename = e.filename;
+      type = file.type;
+      filename = file.filename;
+      extension = file.type;
       if (type === "doc" || type === "word") {
         extension = "doc";
         img = "images/win98_icons/WINWORD_2.ico";
       } else if (type === "pdf") {
-        extension = type;
         img = "images/win98_icons/pdf.png";
       } else if (type === "txt") {
-        extension = type;
         img = "images/win98_icons/notepad_file.ico";
       }
       //var iconNumber = memphis.completeArr(memphis.desktopIconNumber);
-      const iconData =
-        `<div class="folder-list user-file-list" fileID="${e.fileID}" type="${extension}" tabindex="0"><img class="icon" src="${img}" style="width:14px;"/><span style="vertical-align:top">${filename}</span></div>`;
+      const iconData = `<div class="folder-list user-file-list" fileID="${file.id}" type="${extension}" tabindex="0"><img class="icon" src="${img}" style="width:14px;"/><span style="vertical-align:top">${filename}</span></div>`;
       $(iconData).appendTo(content);
     });
   }
-  print(content: string, fileName = 'Untitled') {
+  print(content: string, fileName = 'Untitled'): void {
     const printWindow = window.open('', '', 'height=400,width=800');
+    if (!printWindow) {
+      SystemUI.setDialogBox(
+        "print",
+        "Error",
+        "1",
+        "Unable to open print window. Please check your browser settings.",
+      );
+      return;
+    }
     printWindow.document.body.innerHTML = `<html><head><title>${fileName}</title>`;
     printWindow.document.body.innerHTML += '</head><body>';
     printWindow.document.body.innerHTML += content;
@@ -1500,12 +1534,12 @@ export class SystemUI extends Process {
     printWindow.print();
     printWindow.close();
   }
-  printFile(parentId: string) {
+  printFile(parentId: string): void {
     const content = $(`#${parentId}-content .document-wrap`).html();
-    const filename = $(`#${parentId}`).attr("document-title");
+    const filename = $(`#${parentId}`).attr("document-title") ?? "";
     this.print(content, filename);
   }
-  open(windowId: any) {
+  async open(windowId: HTMLElement): Promise<void> {
     const self = this;
     const parentId = $(windowId)
       .closest("[id]")
@@ -1513,13 +1547,10 @@ export class SystemUI extends Process {
       .closest("[id]")
       .attr("id");
     const parentSel = `#${parentId}`;
-    const fileID = $(`${parentSel} #open .fileID`).val();
-    //var type = $(parentSel + ' #open select#file-type').val();
-    //var location = $(parentSel + ' #open select#open-location').val();
-    //console.log(parentId + ' ' + location);
+    const sFileID = $(`${parentSel} #open .fileID`).val();
+    const fileID = sFileID ? parseNumber(sFileID.toString()) : null;
     const filename = $(`${parentSel} #open input.filename`).val();
-    //console.log("open FUNCTION-filename:" + filename);
-    if (filename === "") {
+    if (filename === "" && parentId) {
       SystemUI.setDialogBox(
         parentId,
         "Error",
@@ -1532,14 +1563,15 @@ export class SystemUI extends Process {
       });
     } else {
       const saved = $(parentSel).attr("saved");
-      if (saved === "false") {
-        $(`${parentSel} #dialog button`).on("click", function () {
-          //console.log('inDialog');
+      if (saved === "false" && parentId) {
+        SystemUI.setDialogBox(parentId, 'Microsoft Word', '4', 'Are you sure you want to close before exiting?');
+        $(`${parentSel} #dialog button`).on("click", async function () {
           $(parentSel).css("pointer-events", "auto");
           const d = $(this).attr("value");
 
-          if (d === "yes") {
-            const a = self.getFileFromLocal(fileID);
+          if (d === "yes" && fileID) {
+            const a = await self.getFileFromLocal(fileID);
+            if (!a) return;
             $(parentSel)
               .children()
               .children()
@@ -1547,9 +1579,9 @@ export class SystemUI extends Process {
               .text(a.filename);
             $(`#task-${parentId} p`).text(a.filename);
             $(parentSel).find(".document-wrap").html(a.content);
-            $(parentSel).attr("fileid", a.fileID);
+            $(parentSel).attr("fileid", a.id?.toString() ?? "");
             $(parentSel).attr("document-title", a.filename);
-            MsWord._wordNumberRemove($(parentSel).attr("docNumber"));
+            MsWord._wordNumberRemove($(parentSel).attr("docNumber") ?? "");
             $(`${parentSel} #open`).css("display", "none");
             $(parentSel).css("pointer-events", "auto");
             $(parentSel).attr("saved", "true");
@@ -1562,28 +1594,37 @@ export class SystemUI extends Process {
           }
         });
       } else {
-        const a = this.getFileFromLocal(fileID);
-        $(parentSel).children().children().children(".title").text(a.filename);
-        $(`#task-${parentId} p`).text(a.filename);
-        $(parentSel).find(".document-wrap").html(a.content);
-        $(parentSel).attr("fileid", a.fileID);
-        MsWord._wordNumberRemove($(parentSel).attr("docNumber"));
-        $(`${parentSel} #open`).css("display", "none");
-        $(parentSel).css("pointer-events", "auto");
-        $(parentSel).attr("saved", "true");
+        if (fileID) {
+          const a = await this.getFileFromLocal(fileID);
+          if (!a) return;
+          $(parentSel)
+            .children()
+            .children()
+            .children(".title")
+            .text(a.filename);
+          $(`#task-${parentId} p`).text(a.filename);
+          $(parentSel).find(".document-wrap").html(a.content);
+          $(parentSel).attr("fileid", a.id?.toString() ?? "");
+          MsWord._wordNumberRemove(
+            $(parentSel).attr("docNumber") ?? "",
+          );
+          $(`${parentSel} #open`).css("display", "none");
+          $(parentSel).css("pointer-events", "auto");
+          $(parentSel).attr("saved", "true");
+        }
       }
     }
   }
-  save(windowId: any) {
-    const parentId = $(windowId)
+  async save(windowId: HTMLElement): Promise<void> {
+    const parentId = ($(windowId)
       .closest("[id]")
       .parent()
       .closest("[id]")
-      .attr("id");
+      .attr("id") ?? "");
     const parentSel = `#${parentId}`;
-    const type = $(`${parentSel} #save select#file-type`).val().toString();
-    const location = $(`${parentSel} #save select#save-location`).val().toString();
-    const filename = $(`${parentSel} #save input.filename`).val().toString();
+    const type = ($(`${parentSel} #save select#file-type`).val() ?? "").toString();
+    const location = ($(`${parentSel} #save select#save-location`).val())?.toString();
+    const filename = ($(`${parentSel} #save input.filename`).val() ?? "").toString();
     if (filename === "") {
       SystemUI.setDialogBox(
         parentId,
@@ -1598,7 +1639,7 @@ export class SystemUI extends Process {
     } else {
       if (location === "desktop") {
         const contentDocument = $(`${parentSel}-content .document-wrap`).html();
-        this.saveToLocal(parentId, filename, contentDocument, type);
+        await this.saveToLocal(parentId, filename, contentDocument, type);
         const c = `${filename} - Microsoft Word`;
         $(parentSel).children().children().children(".title").text(c);
         $(`#task-${parentId} p`).text(filename);
@@ -1607,7 +1648,7 @@ export class SystemUI extends Process {
       } else if (location === "computer") {
         this.saveFile(parentId, filename, type);
         $(`${parentSel} #save`).css("display", "none");
-      } else if (location === null) {
+      } else if (!location) {
         SystemUI.setDialogBox(
           parentId,
           "Error",
@@ -1621,209 +1662,118 @@ export class SystemUI extends Process {
       });
     }
   }
-  getFromLocal() {
-    const files: UserFile[] = [];
-    const localData = this.getCurrentUser();
-    //var localData = JSON.parse(localStorage.getItem("user")).find(function(e){return e.username = JSON.parse(localStroage.getItem('currentUser')).username});
-
-    if (
-      localData != null &&
-      typeof localData !== "undefined" &&
-      localData.files.length > 0
-    ) {
-      $.each(localData.files, (_i, e) => {
-        const file = {
-          fileID: e.fileID,
-          program: e.program,
-          filename: e.filename,
-          type: e.type,
-        } as UserFile;
-        if (!files.some((k) =>
-          k.fileID === file.fileID &&
-          k.filename === file.filename &&
-          k.type === file.type
-        )) {
-          files.push(file);
-        }
-      });
-      return files;
+  async getFromLocal(): Promise<UserFile[]> {
+    const currentUser = await this.getCurrentUser();
+    if (!currentUser) {
+      return [];
     }
-    console.log("No Files");
+    const files: UserFile[] = await db.files.where('userId').equals(currentUser.id).or('static').equals('true').toArray();
+    return files;
   }
-  private getCurrentUser() {
-    const result = $.grep(
-      JSON.parse(localStorage.getItem("users")).users,
-      (e: User) => e.username === JSON.parse(localStorage.getItem("currentUser")).username
-    );
-    return result.length === 1 ? result[0] : null;
-  }
-
-  getFileFromLocal(fileID: string | number | string[]) {
-    let file: UserFile;
-    const localData = this.getCurrentUser();
-    for (let i = 0; i < localData.files.length; i++) {
-      if (fileID === localData.files[i].fileID) {
-        file = localData.files[i];
-        break;
-      }
-    }
-    return file;
+  private async getCurrentUser() {
+    return await db.users.filter((user)=>user.current).first().catch((err) => {
+      console.error("Error fetching current user:", err);
+      return undefined;
+    });
   }
 
-  saveToLocal(parentId: string, filename: string, contentDocument: string, type: string) {
-    if (typeof Storage !== "undefined") {
-      $(`#${parentId}`).attr("saved", "true");
-      const program = $(`#${parentId}`).attr("program-name");
-      const localData = this.getCurrentUser();
-      const exists = this.checkIfFileExists(filename, type);
-      if (exists) {
-        if ($(`#${parentId}`).attr("fileid") !== exists) {
-          SystemUI.setDialogBox(
-            parentId,
-            "Microsoft Word",
-            "4",
-            `Do you want to replace the existing ${filename}.${type}?`,
-          );
-          $(`#${parentId} #dialog button`).on("click", function () {
-            const d = $(this).attr("value");
-            if (d === "yes") {
-              for (let i = 0; i < localData.files.length; i++) {
-                if (
-                  filename === localData.files[i].filename &&
-                  type === localData.files[i].type
-                ) {
-                  $(`#${parentId}`).attr("fileid", localData.files[i].fileID);
-                  localData.files[i].content = contentDocument;
-                  localData.files[i].modifiedDate = Date.now();
-                  break;
-                }
-              }
-              const users = JSON.parse(localStorage.getItem("users"));
-              $.each(users.users, function () {
-                if (
-                  this.username ===
-                  JSON.parse(localStorage.getItem("currentUser")).username
-                ) {
-                  this.files = localData.files;
-                  return false;
-                }
-              });
-              localStorage.setItem("users", JSON.stringify(users));
-              $(`#${parentId} #dialog`).css("display", "none");
-            } else if (d === "no") {
-              $(`#${parentId} #dialog`).css("display", "none");
-              $(`#${parentId} #save`).css("display", "block");
-            } else if (d === "cancel") {
-              $(`#${parentId} #dialog`).css("display", "none");
-            }
-          });
-        } else {
-          for (let i = 0; i < localData.files.length; i++) {
-            if (
-              filename === localData.files[i].filename &&
-              type === localData.files[i].type
-            ) {
-              $(`#${parentId}`).attr("fileid", localData.files[i].fileID);
-              localData.files[i].content = contentDocument;
-              localData.files[i].modifiedDate = Date.now();
-              break;
-            }
+  async getFileFromLocal(fileID: number): Promise<UserFile | undefined> {
+    return await Kernel.getFileFromLocal(fileID);
+  }
+
+  async saveToLocal(parentId: string, filename: string, contentDocument: string, type: string): Promise<void> {
+    $(`#${parentId}`).attr("saved", "true");
+    const program = $(`#${parentId}`).attr("program-name") ?? "";
+    const currentUser = await this.getCurrentUser();
+    if (!currentUser) return;
+    const exists = await this.checkIfFileExists(filename, type);
+    if (exists) {
+      if (Number.parseInt($(`#${parentId}`).attr("fileid") ?? "") !== exists) {
+        SystemUI.setDialogBox(
+          parentId,
+          "Microsoft Word",
+          "4",
+          `Do you want to replace the existing ${filename}.${type}?`,
+        );
+        $(`#${parentId} #dialog button`).on("click", async function () {
+          const d = $(this).attr("value");
+          if (d === "yes") {
+            await db.files.where({
+              id: exists,
+              userId: currentUser.id,
+            }).modify({
+              content: contentDocument,
+              modifiedDate: Date.now(),
+            });
+            $(`#${parentId} #dialog`).css("display", "none");
+          } else if (d === "no") {
+            $(`#${parentId} #dialog`).css("display", "none");
+            $(`#${parentId} #save`).css("display", "block");
+          } else if (d === "cancel") {
+            $(`#${parentId} #dialog`).css("display", "none");
           }
-          const users = JSON.parse(localStorage.getItem("users"));
-          $.each(users.users, function () {
-            if (
-              this.username ===
-              JSON.parse(localStorage.getItem("currentUser")).username
-            ) {
-              this.files = localData.files;
-              return false;
-            }
-          });
-        }
-      } else if (!exists) {
-        const fid = `file-${Date.now()}`;
-        localData.files.push({
-          fileID: fid,
-          filename: filename,
+        });
+      } else {
+        // Update existing file
+        await db.files.where({
+          id: exists,
+        }).modify({
           content: contentDocument,
-          type: type,
-          program: program,
-          creationDate: Date.now(),
           modifiedDate: Date.now(),
         });
-        const users = JSON.parse(localStorage.getItem("users"));
-        $.each(users.users, function () {
-          if (
-            this.username ===
-            JSON.parse(localStorage.getItem("currentUser")).username
-          ) {
-            this.files = localData.files;
-            //currentUser = v;
-            return false;
-          }
-        });
-        localStorage.setItem("users", JSON.stringify(users));
-        $(`#${parentId}`).attr("fileid", fid);
+        $(`#${parentId}`).attr("fileid", exists.toString());
+      }
+    } else if (!exists) {
+      const userFile: Omit<UserFile, 'id'> = {
+        filename: filename,
+        content: contentDocument,
+        type: type,
+        extension: type,
+        program: program,
+        creationDate: Date.now(),
+        modifiedDate: Date.now(),
+        userId: currentUser.id,
+        static: false,
+      };
+      const fid = await db.files.add(userFile);
+      if (fid) {
         this.setNewDesktop(fid, program, filename, type);
       }
-    } else {
-      console.log("Local storage is not supported");
     }
   }
 
-  checkIfFileExists(filename: any, type: string) {
-    let b: string | false;
-    const localData = this.getCurrentUser();
-    for (const file of localData.files) {
-      if (file.filename === filename && file.type === type) {
-        b = file.fileID;
-      }
-      if (file.filename !== filename) {
-        b = false;
-      }
+  async checkIfFileExists(filename: string, type: string): Promise<number | false> {
+    const currentUser = await this.getCurrentUser();
+    if (!currentUser) return false;
+    const file = await db.files.where('userId').equals(currentUser.id)
+      .and((f) => f.filename === filename && f.type === type)
+      .first();
+    if (file?.id) {
+      return file.id;
     }
-    return b;
+    return false;
   }
-  rename(fileID: string, filename: string) {
-    const localData = this.getCurrentUser();
-    for (let i = 0; i < localData.files.length; i++) {
-      if (fileID === localData.files[i].fileID) {
-        localData.files[i].filename = filename;
-        localData.files[i].modifiedDate = Date.now();
-        break;
-      }
+  async rename(fileID: string, filename: string): Promise<void> {
+    const currentUser = await this.getCurrentUser();
+    if (!currentUser) return;
+
+    const file = await db.files.where({
+      userId: currentUser.id,
+      id: fileID
+    }).first();
+    if (file) {
+      file.filename = filename;
+      file.modifiedDate = Date.now();
+      await db.files.put(file);
     }
-    const users = JSON.parse(localStorage.getItem("users"));
-    $.each(users.users, function () {
-      if (
-        this.username ===
-        JSON.parse(localStorage.getItem("currentUser")).username
-      ) {
-        this.files = localData.files;
-        return false;
-      }
-    });
-    localStorage.setItem("users", JSON.stringify(users));
-    const pid = $(`.window[fileid="${fileID}"]`).attr("pid");
+    const pid = $(`.window[fileid="${fileID}"]`).attr("pid") ?? "";
     $(`.window[fileid="${fileID}"]`)
       .find(".title")
       .text(filename);
     $(`.window[fileid="${fileID}"]`).attr("document-title", filename);
     $(`#taskbar [pid="${pid}"] p`).text(filename);
   }
-  async saveFile(parentId: string, filename: string | number | string[], type: string | number | string[]) {
-    //console.log(type);
-    /*
-    var parentId = $(windowId).closest('[id]').parent().closest('[id]').attr('id');
-    var type = $('#' + parentId + ' select.select').val();
-    console.log(parentId);
-    var filename = $('#' + parentId + ' input.filename').val();
-    if (filename == "") {
-        memphis.setDialogBox(parentId, 'Error', '1', 'Please enter a file name. Click OK to continue.');
-    } else {*/
-    /*$.ajaxSetup({
-         cache: true
-    });*/
+  async saveFile(parentId: string, filename: string, type: string): Promise<void> {
     if (type === "pdf") {
       $(`#${parentId}`).css("pointer-events", "auto");
       this.printFile(parentId);
@@ -1859,13 +1809,16 @@ export class SystemUI extends Process {
       $(`#${parentId}`).css("pointer-events", "auto");
       return;
     }
-    console.log("error");
     $(`#${parentId}`).css("pointer-events", "auto");
   }
-  convertImagesToBase64(parentId: string) {
+  convertImagesToBase64(parentId: string): void {
     const regularImages = $(`#${parentId}-content img`);
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      console.error("Canvas context is not available.");
+      return;
+    }
     [].forEach.call(regularImages, (imgElement: HTMLImageElement) => {
       // preparing canvas for drawing
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1880,11 +1833,17 @@ export class SystemUI extends Process {
     });
     canvas.remove();
   }
-  deleteFile(fileID: string) {
+  async deleteFile(fileID: number): Promise<void> {
     window.globalBot.agent((a) => {
       a.speak("Are you sure you want to delete this file?");
     });
-    if (fileID === "file-0000000000001" || fileID === "file-0000000000002") {
+    const currentUser = await this.getCurrentUser();
+    const file = await db.files.where({
+      id: fileID,
+      userId: currentUser?.id
+    }).first();
+
+    if (file?.static) {
       SystemUI.setDialogBox(
         "desktop",
         "Error",
@@ -1893,66 +1852,67 @@ export class SystemUI extends Process {
       );
       return;
     }
-    const localData = this.getCurrentUser();
-    for (let i = 0; i < localData.files.length; i++) {
-      if (localData.files[i].fileID === fileID) {
-        localData.files.splice(i, 1);
-      }
+    if (file) {
+      await db.files.where({
+        id: fileID,
+        userId: currentUser?.id
+      }).delete();
     }
-    const users = JSON.parse(localStorage.getItem("users"));
-    $.each(users.users, function () {
-      if (
-        this.username ===
-        JSON.parse(localStorage.getItem("currentUser")).username
-      ) {
-        this.files = localData.files;
-        return false;
-      }
-    });
-    localStorage.setItem("users", JSON.stringify(users));
     $(`.desktop-icon[fileid="${fileID}"`).remove();
     $(`.window[fileid="${fileID}"]`).attr("saved", "false");
   }
-  attach(windowId: any) {
-    const parentId = $(windowId)
+  async attach(windowId: HTMLElement): Promise<void> {
+    const parentId = ($(windowId)
       .closest("[id]")
       .parent()
       .closest("[id]")
-      .attr("id");
+      .attr("id") ?? "");
     const parentSel = `#${parentId}`;
     const fileids = $(`${parentSel} #attach .fileID`)
-      .val()
-      .toString()
+      .val()?.toString()
       .split("|");
+    if (!fileids || fileids.length < 1) {
+      SystemUI.setDialogBox(
+        parentId,
+        "Error",
+        "1",
+        "Please select a file to attach.",
+      );
+      return;
+    }
     for (let i = 0; i < fileids.length; i++) {
-      this.attachCreate(parentSel, fileids[i]);
+      await this.attachCreate(parentSel, parseNumber(fileids[i]));
     }
   }
-  attachCreate(parentID: string, fileID: any) {
-    let file: UserFile;
+  async attachCreate(parentID: string, fileID: number): Promise<void> {
     let fileBlob: string | Blob;
     if (fileID) {
-      file = this.getFileFromLocal(fileID);
+      const file = await this.getFileFromLocal(fileID);
       fileBlob = "";
-      if (file.type === "pdf") {
-        fileBlob = "pdf";
-        this.attachAppend(parentID, file, fileBlob);
-      } else {
-        this.fileToBlob(file.content, file.type, (abc: string) => {
-          fileBlob = abc;
+      if (file) {
+        if (file.type === "pdf") {
+          fileBlob = "pdf";
           this.attachAppend(parentID, file, fileBlob);
-        });
+        } else {
+          this.fileToBlob(file.content, file.type, (abc: string | Blob) => {
+            fileBlob = abc;
+            this.attachAppend(parentID, file, fileBlob);
+          });
+        }
+      } else {
+        console.error(`File with ID ${fileID} not found.`);
+        return;
       }
     } else {
       return;
     }
   }
-  attachAppend(parentID: any, file: { fileID: any; type: any; filename: any; }, fileBlob: string) {
+  attachAppend(parentID: string, file: UserFile, fileBlob: string | Blob): void {
     if (
-      $(`${parentID} div.attachment [file-id="${file.fileID}"]`).length < 1
+      $(`${parentID} div.attachment [file-id="${file.id}"]`).length < 1
     ) {
       const iconURL = ProgramData.getIconByType(file.type);
-      const attachData = `<div file-id="${file.fileID}" class="attached-list">
+      const attachData = `<div file-id="${file.id}" class="attached-list">
 		<img class="icon" src="${iconURL}"/>
 		<span>${file.filename}</span>
 		<div class="cancel" >
@@ -1960,7 +1920,7 @@ export class SystemUI extends Process {
 		</div>
 		</div>`;
       $(attachData).appendTo(`${parentID} div.attachment`);
-      $(`[file-id="${file.fileID}"]`).data({
+      $(`[file-id="${file.id}"]`).data({
         file: fileBlob,
       });
       $(`${parentID} #attach`).css("display", "none");
@@ -1974,7 +1934,7 @@ export class SystemUI extends Process {
       );
     }
   }
-  async fileToBlob(contentDocument: any, type: string, callback: (blob: string | Blob) => void) {
+  async fileToBlob(contentDocument: string, type: string, callback: (blob: string | Blob) => void): Promise<void> {
     let blob: string | Blob;
     const cd = contentDocument;
     if (type === "word" || type === "doc") {
@@ -1996,8 +1956,7 @@ export class SystemUI extends Process {
       });
       callback(blob);
     } else {
-      blob = "blobError";
-      callback(blob);
+      throw new Error("Unsupported file type for blob conversion.");
     }
   }
   //----------------------------------------------- TASKBAR FUNCTIONS -----------------------------------------//
@@ -2009,14 +1968,14 @@ export class SystemUI extends Process {
    * @param  {description}
    * @return {nothing.}
    */
-  appendTask(processID: any, program: string, windowID: string, description: string) {
+  appendTask(processID: number, program: string, windowID: string, description: string) {
     const newWindowID = windowID.substring(1);
     const taskID = `task-${newWindowID}`;
-    const iconURL = ProgramData.getIcon(program);
+    const iconURL = ProgramData.getIcon(program) ?? "";
     const taskbarData = `<span class="window-open" id="${taskID}" pid="${processID}" program-name="${program} "title="${description}">
 			<img class="icon" src="${iconURL}"/>
 			<p class="text">${description}</p>
-		</span>'`;
+		</span>`;
     $(taskbarData)
       .appendTo("#task")
       .promise()
@@ -2031,30 +1990,40 @@ export class SystemUI extends Process {
    *
    */
   setTaskPosition() {
-    const availableWidth = $("#taskbar").outerWidth() - 228;
+    const availableWidth = ($("#taskbar").outerWidth() || 27) - 228;
     const numberOpen = $(".window-open").length;
-    const maxWidth = Number.parseInt($(".window-open").css("max-width"), 10);
-    let width: number;
-    if (numberOpen > 0) {
-      if (numberOpen * maxWidth > availableWidth) {
-        width = Math.round(availableWidth / numberOpen) - 10;
+    if ($(".window-open")) {
+      const maxWidthPx = $(".window-open").css("max-width");
+      if (!maxWidthPx) {
+        console.error("Max width not set for window-open elements.");
+        return;
+      }
+      const maxWidth = parseNumber(maxWidthPx.replace("px", ""));
+      let width: number;  
+      if (numberOpen > 0) {
+        if (numberOpen * maxWidth > availableWidth) {
+          width = Math.round(availableWidth / numberOpen) - 10;
+        } else {
+          width = maxWidth;
+        }
       } else {
         width = maxWidth;
       }
-    } else {
-      width = maxWidth;
+      if (width < 31) {
+        this.taskSplit();
+        width = 30;
+      } else {
+        this.taskNoSplit();
+      }
+      $(".window-open").css("width", width);
     }
-    if (width < 31) {
-      this.taskSplit();
-      width = 30;
-    } else {
-      this.taskNoSplit();
-    }
-    $(".window-open").css("width", width);
+    else {
+      console.log("No open windows to set task position.");
+    } 
   }
-  taskSplit() {
+  taskSplit(): void {
     const childNodes = $(".window-open");
-    const numberFit = Math.round(($("#taskbar").outerWidth() - 228) / 30) - 11;
+    const numberFit = Math.round((($("#taskbar").outerWidth() || 27) - 228) / 30) - 11;
     const totalChildNodes = childNodes.length;
     const numberOfPages = Math.ceil(totalChildNodes / numberFit);
     const parentElement = $('<span id="task"></span>');
@@ -2064,7 +2033,7 @@ export class SystemUI extends Process {
     let k = 0;
     for (i = 1; i <= numberOfPages; i++) {
       temp =
-        `<span id= "task-${i}" class="task-page" style="display:none;" page-num="${i}"></span>`;
+        `<span id="task-${i}" class="task-page" style="display:none;" page-num="${i}"></span>`;
       $(parentElement).append(temp);
     }
     for (i = 0; i < totalChildNodes; i++) {
@@ -2094,41 +2063,41 @@ export class SystemUI extends Process {
       .css("display", "inline")
       .addClass("active-page");
   }
-  upTaskPage() {
+  upTaskPage(): void {
     const numberOfPages = $(".task-page").length;
-    let id = Number.parseInt($(".active-page").attr("page-num"));
+    let id = parseNumber($(".active-page").attr("page-num") ?? "");
     id++;
     id < 1 || id > numberOfPages ? "" : this.showTaskPage(id);
   }
-  downTaskPage() {
+  downTaskPage(): void {
     const numberOfPages = $(".task-page").length;
-    let id = Number.parseInt($(".active-page").attr("page-num"));
+    let id = parseNumber($(".active-page").attr("page-num") ?? "");
     id--;
     id < 1 || id > numberOfPages ? "" : this.showTaskPage(id);
   }
-  taskNoSplit() {
+  taskNoSplit(): number {
     const a = 0;
     return a;
   }
-  removeTask(pid: any) {
+  removeTask(pid: number) {
     $(`#taskbar [pid="${pid}"]`).remove();
     this.setTaskPosition();
   }
-  setTaskActive(pid: any) {
+  setTaskActive(pid: number) {
     $("#task span.active-task").removeClass("active-task");
     $(`#task [pid="${pid}"]`).addClass("active-task");
   }
-  setTaskInActive(_pid: any) {
+  setTaskInActive(): void {
     $("#task span.active-task").removeClass("active-task");
     //$('#task [pid="' + pid + '"]').addClass('active-task');
   }
-  minimizeTask(pid: any) {
+  minimizeTask(pid: number) {
     $(`#task [pid="${pid}"]`).removeClass("active-task");
   }
 
   //------------------------------------------ Dialog Box Functions ---------------------------------------------- //
 
-  static setDialogBox(parentId: string | string[], title: string | number | boolean | ((this: HTMLElement, index: number, text: string) => string | number | boolean), type: string, errorMessage: string) {
+  static setDialogBox(parentId: string, title: string, type: string, errorMessage: string): void {
     let newParentId: any;
     if (parentId.indexOf("#") === 0) {
       newParentId = parentId.slice(1, parentId.length);
@@ -2243,20 +2212,20 @@ export class SystemUI extends Process {
   //     }
   //     return a;
   // }
-  getDesktopPos() {
+  getDesktopPos(): { left1: number; top1: number; } | null {
     const $icons = $('.desktop-icon[program-name!="recyclebin"]');
     const iconHeight = 71;
     const iconWidth = 82;
-    const containerHeight = $(window).height();
+    const { height: containerHeight } = getWindowDimensions();
     const numberFit = Math.floor(containerHeight / (iconHeight + 8));
     let otop: number;
     let oleft: number;
     let indexY = 0;
     let indexX = 0;
-    let a: Element | { left1?: number; top1?: number; } | null;
+    let a: Element | null;
     $icons.each(function (i) {
-      otop = Number.parseInt($(this).css("top"), 10);
-      oleft = Number.parseInt($(this).css("left"), 10);
+      otop = parseNumber($(this).css("top") ?? "0");
+      oleft = parseNumber($(this).css("left") ?? "0");
       console.log(`Top: ${otop}/${iconHeight}=`);
       console.log(`Left: ${oleft}/${iconWidth}=`);
       if (i === 0) return;
@@ -2267,7 +2236,7 @@ export class SystemUI extends Process {
           indexX * iconWidth + 8,
           indexY * iconHeight + 8,
         );
-        if (a.classList.contains("desktop-icon")) {
+        if (a?.classList.contains("desktop-icon")) {
           return;
         }
         return false;
@@ -2279,7 +2248,7 @@ export class SystemUI extends Process {
           indexX * iconWidth + 8,
           indexY * iconHeight + 8,
         );
-        if (a.classList.contains("desktop-icon")) {
+        if (a?.classList.contains("desktop-icon")) {
           return;
         }
         return false;
@@ -2290,33 +2259,10 @@ export class SystemUI extends Process {
       }
     });
 
-    a = {
+    return {
       left1: indexX * iconWidth,
       top1: indexY * iconHeight,
     };
-    // var $container = $(this),
-    //     $icons = $(options.selector, $container),
-    //     containerHeight = $(window).height(),
-    //     iconHeight = $($icons[0]).height(),
-    //     iconWidth = $($icons[0]).width(),
-    //     numberFit = Math.floor(containerHeight / (iconHeight + options.marginTop)),
-    //     top = 0,
-    //     left = 0;
-    //     console.log(top);
-    // $icons.each(function(i) {
-    //     if (i % numberFit == 0 && i > 0) {
-    //         top = 0;
-    //         left += iconWidth + options.marginLeft;
-    //     }
-    //     top = top + options.marginTop;
-    //     var a = {
-    //         top: top,
-    //         left: left + options.marginLeft
-    //         };
-    //     //console.log($(this).css('top'));
-    //     top += iconHeight;
-    // });
-    return a;
   }
   // getDesktop() {
   //     var filename;
@@ -2372,17 +2318,16 @@ export class SystemUI extends Process {
   //         top += iconHeight;
   //     });
   // }
-  setDesktop() {
-    let extension: string;
-    let img: string;
-    let type: string;
-    let filename: any;
-    const b = this.getFromLocal();
-    $.each(b, (_i, e) => {
-      //a = self.getDesktopPos();
-      if (e.fileID === "file-0000000000001") return;
+  async setDesktop(): Promise<void> {
+    const files = await this.getFromLocal();
+    if (!files || files.length < 1) return;
+    this.iconNumber = 0;
+    for (const e of files) {
+      let extension: string;
+      let img: string;
+      let type: string;
       type = e.type;
-      filename = e.filename;
+      const filename = e.filename;
       if (type === "doc" || type === "word") {
         extension = "doc";
         img = "images/win98_icons/WINWORD_2.ico";
@@ -2392,13 +2337,12 @@ export class SystemUI extends Process {
       } else if (type === "txt") {
         extension = type;
         img = "images/win98_icons/notepad_file.ico";
+      } else {
+        return; // Skip if type is not recognized
       }
       this.iconNumber++;
-      //var iconNumber = memphis.completeArr(memphis.desktopIconNumber);
-      //margin-left:-10px;
-      //var iconData = '<div draggable="true" id="desktop-icon-' + self.iconNumber + '" class="desktop-icon user-file" data-item="' + self.iconNumber + '" tabindex="0" fileID="' + e.fileID + '" program-name="' + e.program + '" type="' + extension + '" style="background:url(' + img + ') no-repeat center top;background-size: 32px; top:' + a.top1 + 'px; left:' + a.left1 + 'px;"><p class="text" style="text-align:center;"><span>' + filename + '</span></p></div>';
       const iconData =
-        `<div draggable="true" id="desktop-icon-${this.iconNumber}" class="desktop-icon user-file" data-item="${this.iconNumber}" tabindex="0" fileID="${e.fileID}" program-name="${e.program}" type="${extension}" style="background:url(${img}) no-repeat center top;background-size: 32px; "><p class="text" style="text-align:center;"><span>${filename}</span></p></div>`;
+        `<div draggable="true" id="desktop-icon-${this.iconNumber}" class="desktop-icon user-file" data-item="${this.iconNumber}" tabindex="0" fileID="${e.id}" program-name="${e.program}" type="${extension}" style="background:url(${img}) no-repeat center top;background-size: 32px; "><p class="text" style="text-align:center;"><span>${filename}</span></p></div>`;
 
       $(iconData)
         .appendTo("#desktop-icons")
@@ -2408,27 +2352,29 @@ export class SystemUI extends Process {
           snap: [71, 82],
           containment: "#desktop",
         });
-    });
+    };
     setTimeout(() => {
       $("#desktop-icons").setInitialIcons();
     }, 500);
   }
-  setNewDesktop(fileID: string, program: string, filename: any, type: string, shortcut?: boolean) {
-    let extension: string;
-    let img: string;
+    setNewDesktop(fileID: number, program: string, filename: string, type: string, shortcut?: boolean): void {
+    let extension = type;
+    let img = "";
     let stclass = "";
     if (shortcut) {
       stclass = "shortcut";
     }
     const a = this.getDesktopPos();
+    if (!a){
+      console.error("Could not get desktop position.");
+      return;
+    }
     if (type === "doc" || type === "word") {
       extension = "doc";
       img = "images/win98_icons/WINWORD_2.ico";
     } else if (type === "pdf") {
-      extension = type;
       img = "images/win98_icons/pdf.png";
     } else if (type === "txt") {
-      extension = type;
       img = "images/win98_icons/notepad_file.ico";
     }
     this.iconNumber++;
@@ -2443,50 +2389,50 @@ export class SystemUI extends Process {
         grid: [64, 64],
         containment: "#desktop",
       });
-    //memphis.desktopInit();
-    //console.log(iconNumber);
   }
 
   // --- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- MS WORD Functions() -- -- -- -- -- -- -- -- -- -- -- -//
 
-  newWord(fileID?: string) {
-    const processID = this.newProcess();
-    const p = new MsWord(processID, fileID);
-    this.addProcess(processID, "msword", p.windowID, p.description);
+  async newWord(fileID?: number): Promise<void> {
+    const processID = await this.newProcess();
+    const p = await new MsWord(processID, fileID).create();
+    this.updateProcess(processID, "msword", p.windowID, p.description);
     //this.access();
     this.setWindowPosition(p.windowID);
     this.appendTask(processID, "msword", p.windowID, p.description);
     this.setActive(processID);
   }
   // Mail Functions(){
-  newMail(fileID?: string) {
-    const processID = this.newProcess();
-    const p = new MailClient(processID);
-    this.addProcess(processID, "mail", p.windowID, p.description);
+  async newMail(fileID?: number): Promise<void> {
+    const processID = await this.newProcess();
+    const p = await new MailClient(processID).create();
+    this.updateProcess(processID, "mail", p.windowID, p.description);
     this.setWindowPosition(p.windowID);
     this.appendTask(processID, "mail", p.windowID, p.description);
     this.setActive(processID);
-    this.attachCreate(p.windowID, fileID);
+    if (fileID) {
+      this.attachCreate(p.windowID, fileID);
+    }
   }
 
-  newNotepad(fileID?: string) {
-   const processID = this.newProcess();
-    const p = new Notepad(processID, fileID);
-    this.addProcess(processID, "notepad", p.windowID, p.description);
+  async newNotepad(fileID?: number): Promise<void> {
+   const processID = await this.newProcess();
+    const p = await new Notepad(processID, fileID).create();
+    this.updateProcess(processID, "notepad", p.windowID, p.description);
     this.setWindowPosition(p.windowID);
     this.appendTask(processID, "notepad", p.windowID, p.description);
     this.setActive(processID);
   }
-  sendEmail(windowId: string) {
+  sendEmail(windowId: string): void {
     const toEmail = $(`#${windowId} input.sendTo`)
       .val()
-      .toString()
+      ?.toString()
       .split(",");
     const ccEmail = $(`#${windowId} input.sendToCC`)
       .val()
-      .toString()
+      ?.toString()
       .split(",");
-    if (toEmail.length > 1) {
+    if (toEmail && toEmail.length > 1) {
       SystemUI.setDialogBox(
         windowId,
         "Email address",
@@ -2494,7 +2440,7 @@ export class SystemUI extends Process {
         "Please enter only 1 email address to send an email to",
       );
     }
-    if (ccEmail.length > 1) {
+    if (ccEmail && ccEmail.length > 1) {
       SystemUI.setDialogBox(
         windowId,
         "Email address",
@@ -2509,76 +2455,90 @@ export class SystemUI extends Process {
       //php is left.
     }
     const body = $(`#${windowId} .mail-content`).text();
-    window.open(
-      `mailto:${toEmail[0]}?cc=${ccEmail[0]}&subject=${subject}&body=${body}`,
-    );
+    if (toEmail && toEmail.length > 0) {
+      window.open(
+        `mailto:${toEmail[0]}?subject=${subject}&body=${body}${ccEmail && ccEmail.length > 0 ? `&cc=${ccEmail[0]}` : ""}`,
+      );
+    }
   }
   // -- -- --- -- --- -- --- -- -- -- - Context Menu's -- --- -- -- --- -- -- -- -- - -- //
-  contextMenuInit() {
+  contextMenuInit(): void {
     const self = this;
-    let file: { content: any; filename: string; fileID: any; program: any; type: any; };
+    let file: UserFile | undefined;
     let filename: string;
     $.contextMenu({
       className: "desktop-context-menu",
       selector: ".user-file",
-      callback: function (key) {
+      callback: async function (key, opt) {
         const k = key;
         let that = this;
+        const fileId = parseNumber($(this).attr("fileid"));
+        if (!fileId) return;
+        file = await self.getFileFromLocal(fileId);
+        if (!file || !file.id) return;
+
         switch (key) {
           case "open":
-            self.program(this);
+            await self.program(opt.$trigger);
             break;
           case "print":
-            file = self.getFileFromLocal($(this).attr("fileid"));
             self.print(file.content, file.filename);
             break;
           case "desktop":
             alert(k);
             break;
           case "mail":
-            self.newMail($(this).attr("fileid"));
+            self.newMail(file.id);
             break;
-          case "delete":
+          case "delete":{
             that = this;
-            SystemUI.setDialogBox('desktop', 'Delete File', '6', `Are you sure you want to permenently delete \'${$(this).text()}.${$(this).attr('type')}\'?`);
-            $("#desktop" + " #dialog button").on("click", function () {
-              const d = $(this).attr("value");
-              if (d === "yes") {
-                self.deleteFile($(that).attr("fileid"));
-              }
-            });
-            //self.deleteFile($(this).attr('fileid'));
+            const fileName = $(opt.$trigger).text();
+            const fileType = $(opt.$trigger).attr("type");
+            SystemUI.setDialogBox(
+              "desktop",
+              "Delete File",
+              "6",
+              `Are you sure you want to permenently delete \'${fileName}.${fileType}\'?`,
+            );
+            $("#desktop" + " #dialog button").on(
+              "click",
+              function () {
+                const d = $(this).attr("value");
+                if (d === "yes") {
+                  self.deleteFile(parseNumber($(opt.$trigger).attr("fileid")));
+                }
+              },
+            );
             break;
+          }
           case "createShortcut":
-            file = self.getFileFromLocal($(this).attr("fileid"));
             self.setNewDesktop(
-              file.fileID,
+              file.id,
               file.program,
               file.filename,
               file.type,
               true,
             );
-
             break;
           case "properties":
-            self.properties($(this).attr("fileid"));
+            self.properties(file.id);
             break;
           case "rename":
-            $(this).children().children().attr("contentEditable", "true");
-            $(this).children().children().focus();
+            {
+            const $children = $(opt.$trigger).children().children();
+            $children.attr("contentEditable", "true");
+            $children.focus();
             that = this;
-            $(this)
-              .children()
-              .children()
-              .on("blur", function () {
-                $(this).removeAttr("contentEditable");
-                $(this).removeAttr("autocomplete");
-                filename = $(this).text().toString();
-                self.rename($(that).attr("fileid"), filename);
-              });
+            $children.on("blur", function () {
+              $(this).removeAttr("contentEditable");
+              $(this).removeAttr("autocomplete");
+              filename = $(this).text().toString();
+              self.rename($(that).attr("fileid") ?? "", filename);
+            });
             break;
+          }
           default:
-            console.log("Shouldnt");
+            break;
         }
       },
       items: {
@@ -2638,66 +2598,66 @@ export class SystemUI extends Process {
       },
     });
     $.contextMenu({
-      selector: ".word .menu-bar .file",
-      //appendTo: '#word-1 > div.window-border > div.menu-bar.h-count > a.file',
-      trigger: "left",
-      position: function (opt) {
-        // The type in the typedef is incomplete, so override
-        const newOpt: JQuery & { $menu: JQuery } = opt as unknown as JQuery & {
-          $menu: JQuery;
-        };
-        const a = this.offset();
-        // ts-ignore-next-line
-        newOpt.$menu.css({
-          top: a.top + 10,
-          left: a.left - 10,
-        });
-      },
-      className: "word-file-context-menu",
-      callback: function (key) {
-        console.log("here");
-        const parentId = $(this).closest("[id]").attr("id");
-        switch (key) {
-          case "new":
-            //e.preventDefault();
-            self.newWord();
-            break;
-          case "open":
-            //e.preventDefault();
-            self.showOpen(parentId);
-            break;
-          case "close":
-          case "exit":
-            $(`#${parentId} a.button-3d.close`).trigger("click");
-            break;
-          case "print":
-            self.printFile(parentId);
-            break;
-          case "save":
-            self.showSave(parentId);
-            break;
-          case "saveAs":
-            self.showSave(parentId);
-            break;
-          case "mail":
-            if (
-              $(`#${parentId}`).attr("saved") === "true" &&
-              $(`#${parentId}`).attr("fileid") !== "undefined"
-            ) {
-              self.newMail($(`#${parentId}`).attr("fileid"));
-            } else {
-              SystemUI.setDialogBox(
-                parentId,
-                "Error",
-                "1",
-                "Please save your file before you continue.",
-              );
-            }
-            break;
-          default:
-            console.log("Shouldnt");
-        }
-      },
+        selector: ".word .menu-bar .file",
+        //appendTo: '#word-1 > div.window-border > div.menu-bar.h-count > a.file',
+        trigger: "left",
+        position: function (opt) {
+          // The type in the typedef is incomplete, so override
+          const newOpt = opt as JQuery & { $menu: JQuery };
+          const a = $(this).offset();
+          if (!a) return;
+          // ts-ignore-next-line
+          newOpt.$menu.css({
+            top: a.top + 10,
+            left: a.left - 10,
+          });
+        },
+        className: "word-file-context-menu",
+        callback: function (key) {
+          const parentId = findNearestId.call(this);
+          if (!parentId) return;
+          switch (key) {
+            case "new":
+              //e.preventDefault();
+              self.newWord();
+              break;
+            case "open":
+              //e.preventDefault();
+              self.showOpen(parentId);
+              break;
+            case "close":
+            case "exit":
+              $(`#${parentId} a.button-3d.close`).trigger("click");
+              break;
+            case "print":
+              self.printFile(parentId);
+              break;
+            case "save":
+              self.showSave(parentId);
+              break;
+            case "saveAs":
+              self.showSave(parentId);
+              break;
+            case "mail":
+              if (
+                $(`#${parentId}`).attr("saved") === "true" &&
+                $(`#${parentId}`).attr("fileid") !== "undefined"
+              ) {
+                self.newMail(parseNumber($(`#${parentId}`).attr("fileid")));
+              } else {
+                SystemUI.setDialogBox(
+                  parentId,
+                  "Error",
+                  "1",
+                  "Please save your file before you continue.",
+                );
+              }
+              break;
+            default:
+              console.warn(`Unknown context menu key: ${key}`);
+              break;
+          }
+        },
       items: {
         new: {
           name: "New",
@@ -2822,176 +2782,16 @@ export class SystemUI extends Process {
         },
       },
     });
-    // $.contextMenu({
-    //     selector: '.word .menu-bar .edit',
-    //     //appendTo: '#word-1 > div.window-border > div.menu-bar.h-count > a.file',
-    //     trigger: 'left',
-    //     position: function(opt, x, y) {
-    //         var a = this.offset();
-    //         opt.$menu.css({
-    //             top: a.top + 10,
-    //             left: a.left - 10
-    //         })
-    //     },
-    //     className: 'word-file-context-menu',
-    //     callback: function(key, options) {
-    //         var parentId = $(this).closest('[id]').attr('id');
-    //         var k = key;
-    //         switch (key) {
-    //             case "new":
-    //                 //e.preventDefault();
-    //                 self.newWord();
-    //                 break;
-    //             case "open":
-    //                 //e.preventDefault();
-    //                 self.showOpen(parentId);
-    //                 break;
-    //             case "close":
-    //             case "exit":
-    //                 $('#' + parentId + ' a.button-3d.close').trigger('click');
-    //                 break;
-    //             case "print":
-    //                 $('#' + parentId + ' .toolbar .b-print').trigger('click');
-    //                 break;
-    //             case "save":
-    //                 self.showSave(parentId);
-    //                 break;
-    //             case "saveAs":
-    //                 self.showSave(parentId);
-    //                 break;
-    //             case "mail":
-    //                 if ($('#' + parentId).attr('saved') === "true" && $('#' + parentId).attr('fileid') != 'undefined') {
-    //                     self.newMail($('#' + parentId).attr('fileid'));
-    //                 } else {
-    //                     SystemUI.setDialogBox(parentId, 'Error', '1', 'Please save your file before you continue.');
-    //                 }
-    //                 break;
-    //             default:
-    //                 console.log('Shouldnt');
-    //         }
-    //     },
-    //     items: {
-    //         new: {
-    //             name: "New",
-    //             accesskey: "O",
-    //             //className: "context-menu-bold",
-    //             icon: function(opt, $itemElement, itemKey, item) {
-    //                 // Set the content to the menu trigger selector and add an bootstrap icon to the item.
-    //                 $itemElement.html('<a class="b-new" aria-hidden="true"></a> <p><span class="context-menu-accesskey">N</span>ew</p>');
-    //                 // Add the context-menu-icon-updated class to the item
-    //                 return 'context-menu-icon-updated';
-    //             }
-    //         },
-    //         open: {
-    //             name: "Open",
-    //             accesskey: "O",
-    //             //className: "context-menu-bold",
-    //             icon: function(opt, $itemElement, itemKey, item) {
-    //                 // Set the content to the menu trigger selector and add an bootstrap icon to the item.
-    //                 $itemElement.html('<a class="b-open" aria-hidden="true"></a> <p><span class="context-menu-accesskey">O</span>pen</p>');
-    //                 // Add the context-menu-icon-updated class to the item
-    //                 return 'context-menu-icon-updated';
-    //             }
-    //         },
-    //         close: {
-    //             name: "Close",
-    //             accesskey: "C"
-    //         },
-    //         "sep1": "---------",
-    //         save: {
-    //             name: "Save",
-    //             accesskey: "s",
-    //             //className: "context-menu-bold",
-    //             icon: function(opt, $itemElement, itemKey, item) {
-    //                 // Set the content to the menu trigger selector and add an bootstrap icon to the item.
-    //                 $itemElement.html('<a class="b-save" aria-hidden="true"></a> <p><span class="context-menu-accesskey">S</span>ave</p>');
-    //                 // Add the context-menu-icon-updated class to the item
-    //                 return 'context-menu-icon-updated';
-    //             }
-    //         },
-    //         saveAs: {
-    //             name: "Save As",
-    //             accesskey: "A"
-    //         },
-    //         saveAsHtml: {
-    //             name: "Save As HTML",
-    //             accesskey: "H",
-    //             disabled: true
-    //         },
-    //         version: {
-    //             name: "Versions",
-    //             accesskey: "V",
-    //             disabled: true
-    //         },
-    //         "sep2": "---------",
-    //         pageSet: {
-    //             name: "Page Setup",
-    //             accesskey: "u",
-    //             disabled: true
-    //         },
-    //         printPreview: {
-    //             name: "Print Preview",
-    //             accesskey: "v",
-
-    //             //className: "context-menu-bold",
-    //             icon: function(opt, $itemElement, itemKey, item) {
-    //                 // Set the content to the menu trigger selector and add an bootstrap icon to the item.
-    //                 $itemElement.html('<a class="b-preview" aria-hidden="true"></a> <p>Print Pre<span class="context-menu-accesskey">v</span>iew </p>');
-    //                 // Add the context-menu-icon-updated class to the item
-    //                 return 'context-menu-icon-updated';
-    //             },
-    //             disabled: true
-    //         },
-    //         print: {
-    //             name: "Print",
-    //             accesskey: "P",
-    //             //className: "context-menu-bold",
-    //             icon: function(opt, $itemElement, itemKey, item) {
-    //                 // Set the content to the menu trigger selector and add an bootstrap icon to the item.
-    //                 $itemElement.html('<a class="b-print" aria-hidden="true"></a> <p><span class="context-menu-accesskey">P</span>rint</p>');
-    //                 // Add the context-menu-icon-updated class to the item
-    //                 return 'context-menu-icon-updated';
-    //             }
-    //         },
-    //         "sep3": "---------",
-    //         sendTo: {
-    //             name: "Send To",
-    //             accesskey: "T",
-    //             items: {
-    //                 mail: {
-    //                     name: "Mail Recipient",
-    //                     accesskey: "M",
-    //                     icon: function(opt, $itemElement, itemKey, item) {
-    //                         // Set the content to the menu trigger selector and add an bootstrap icon to the item.
-    //                         $itemElement.html('<a class="b-mail" aria-hidden="true"></a> <p><span class="context-menu-accesskey">M</span>ail Recipient...</p>');
-    //                         // Add the context-menu-icon-updated class to the item
-    //                         return 'context-menu-icon-updated';
-    //                     }
-    //                 }
-    //             }
-    //         },
-    //         properties: {
-    //             name: "Properties",
-    //             accesskey: "r",
-    //             disabled: true
-    //         },
-    //         "sep4": "---------",
-    //         exit: {
-    //             name: "Exit",
-    //             accesskey: "e"
-    //         }
-    //     }
-    // });
     //Notepad Context Menu
     $.contextMenu({
       selector: ".notepad .menu-bar .file",
       //appendTo: '#word-1 > div.window-border > div.menu-bar.h-count > a.file',
       trigger: "left",
-      position: function (opt) {
+      position: (opt) => {
         const newOpt: JQuery & { $menu: JQuery } = opt as unknown as JQuery & {
           $menu: JQuery;
         };
-        const a = this.offset();
+        const a = $(opt).offset() || { top: 0, left: 0 };
         newOpt.$menu.css({
           top: a.top + 10,
           left: a.left - 10,
@@ -2999,29 +2799,32 @@ export class SystemUI extends Process {
       },
       className: "notepad-file-context-menu",
       callback: function (key) {
-        const parentId = $(this).closest("[id]").attr("id");
-        switch (key) {
-          case "new":
-            $("#desktop-icon-5").trigger("dblclick");
-            break;
-          case "open":
-            //e.preventDefault();
-            self.showOpen(parentId);
-            break;
-          case "exit":
-            $(`#${parentId} a.button-3d.close`).trigger("click");
-            break;
-          case "print":
-            self.printFile(parentId);
-            break;
-          case "save":
-            self.showSave(parentId);
-            break;
-          case "saveAs":
-            self.showSave(parentId);
-            break;
-          default:
-            console.log("Shouldnt");
+        const parentId = findNearestId.call(this);
+        if (parentId) {
+          switch (key) {
+            case "new":
+              $("#desktop-icon-5").trigger("dblclick");
+              break;
+            case "open":
+              //e.preventDefault();
+              self.showOpen(parentId);
+              break;
+            case "exit":
+              $(`#${parentId} a.button-3d.close`).trigger("click");
+              break;
+            case "print":
+              self.printFile(parentId);
+              break;
+            case "save":
+              self.showSave(parentId);
+              break;
+            case "saveAs":
+              self.showSave(parentId);
+              break;
+            default:
+              console.warn(`Unknown context menu key: ${key}`);
+              break;
+          }
         }
       },
       items: {

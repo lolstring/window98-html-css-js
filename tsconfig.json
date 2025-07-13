@@ -3,14 +3,14 @@
     "lib": ["es6", "dom"],
     "target": "es2020",
     "module": "esnext",
-    "strict": false,
+    "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist/",
     "moduleResolution": "bundler",
     "allowJs": true,
-    "checkJs": true,
+    "checkJs": false,
     "baseUrl": "./",
     "paths": {
       "*": ["app/types/*.d.ts"]
@@ -18,7 +18,8 @@
   },
   "include": [
     "app/**/*.ts",
-    "app/**/*.d.ts"
+    "app/**/*.d.ts",
+    "app/types/clippy.d.ts"
   ],
   "exclude": [
     "node_modules",
@@ -26,6 +27,7 @@
     "build",
     "coverage",
     "out",
-    "app/installed-programs/*"
+    "app/installed-programs/*",
+    "app/installed-programs/clippy/build/clippy.js"
   ]
 }

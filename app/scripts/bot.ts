@@ -1,12 +1,14 @@
+import type { ClippyAgent } from 'clippy';
 import clippy from "../installed-programs/clippy/build/clippy";
 import $ from "jquery";
 
+
 export class Bot {
   _el: JQuery<HTMLElement>;
-  _agentDfd: JQuery.Deferred<any> | null;
+  _agentDfd: JQuery.Deferred<ClippyAgent> | null;
   _agentEls: JQuery<HTMLElement>;
-  _agentName: string | null;
-  _exampleFuncs: { [key: string]: (agent) => void };
+  _agentName: string | null = null;
+  _exampleFuncs: { [key: string]: (agent: ClippyAgent) => void };
 
   constructor(el: JQuery<HTMLElement>) {
     this._el = el;
@@ -40,7 +42,7 @@ export class Bot {
     if (this._agentDfd) {
       const dfd = $.Deferred();
       this.agent(
-        $.proxy(function (agent) {
+        $.proxy(function (agent: ClippyAgent) {
           agent.hide(
             false,
             $.proxy(function () {
@@ -61,7 +63,7 @@ export class Bot {
     return this._agentDfd.promise();
   }
 
-  _onAgentReady(agent): void {
+  _onAgentReady(agent: ClippyAgent): void {
     if (this._agentDfd) this._agentDfd.resolve(agent);
     agent.show();
     if (this._agentName) {
@@ -80,7 +82,7 @@ export class Bot {
     $(".actions-content").html('<span class="loading">Loading...</span> ');
   }
 
-  _setupActions(agent): void {
+  _setupActions(agent: ClippyAgent): void {
     let content = "";
     const animations = agent.animations().sort();
 
@@ -105,7 +107,7 @@ export class Bot {
     });
   }
 
-  agent(func: (a) => void): JQuery.Promise<any> | undefined {
+  agent(func: (a: ClippyAgent) => void): JQuery.Promise<ClippyAgent> | undefined {
     if (!this._agentDfd) return;
     const dfd = this._agentDfd;
     if ($.isFunction(func) && dfd) {
@@ -128,7 +130,7 @@ export class Bot {
     this.agent($.proxy(f, this));
   }
 
-  _initExampleFuncs(): { [key: string]: (agent) => void } {
+  _initExampleFuncs(): { [key: string]: (agent: ClippyAgent) => void } {
     return {
       play: (agent) => {
         agent.stop();

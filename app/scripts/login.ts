@@ -2,7 +2,10 @@ import { isFirstLogin } from "./util";
 import { Sound } from './sound';
 import { Kernel } from './kernel';
 import { SystemUI } from './system-ui';
-import type { User } from 'application';
+import type { User, UserFile } from 'application';
+import type { ClippyAgent } from 'clippy';
+import db from './storage';
+
 
 export class Login {
   constructor() {
@@ -11,13 +14,13 @@ export class Login {
     this.login();
     //this.lols();
   }
-  greetings() {
+  async greetings() {
     /**
      * Sound
      */
     window.globalBot.speak('Hi, welcome to a recreation of Windows 98 on the web. I am Clippy and I am going to help you around this site.')
-    if (isFirstLogin()) {
-      window.globalBot.agent((a) => {
+    if (await isFirstLogin()) {
+      window.globalBot.agent((a: ClippyAgent) => {
         a.speak('This website allows you to relive Windows 98 in a browser. You can login using your own username after logging out.')
         setTimeout(() => {
           a.moveTo(250, 250);
@@ -96,89 +99,86 @@ export class Login {
     ]
   }
    */
-  login() {
-    const username = $('#username').val() || 'Rahul';
-    if (window.localStorage) {
-      const users = localStorage.getItem('users');
-      if (users !== null) {
-        if (this.userExists(username)) {
-          this.setExistingUser(username);
-        } else {
-          this.addNewUser(username);
-        }
+  async login() {
+    const username: string = ($('#username').val()?.toString() || 'Rahul');
+    const usersExist = await db.users.count() > 0;
+    const user = await db.users.where('username').equalsIgnoreCase(username).first();
+
+    if (usersExist) {
+      if (user) {
+        await this.setExistingUser(user);
       } else {
-        this.firstVisit();
-        this.addNewUser(username);
+        await this.addNewUser(username);
       }
-      this.setup();
     } else {
-      console.log('No Storage');
-      $('#login').css('display', 'none');
-      $('#desktop').css('display', 'block');
-      // sound.play('sprite8');
+      await this.firstVisit();
+      await this.addNewUser(username);
     }
+    this.setup();
+    // } else {
+    //   console.log('No Storage');
+    //   $('#login').css('display', 'none');
+    //   $('#desktop').css('display', 'block');
+    //   // sound.play('sprite8');
+    // }
   }
-  userExists(username) {
-    const users = JSON.parse(localStorage.getItem('users'));
-    let a = false;
-    $.each(users.users, function () {
-      if (this.username === username) {
-        a = true;
-        return false
-      }
-    })
-    return a;
-  }
-  addNewUser(username) {
-    const users = JSON.parse(localStorage.getItem('users'));
-    const userObj = {
+  async addNewUser(username: string) {
+    const userObj: Omit<User, 'id'> = {
       "username": username,
       "creationDate": Date.now(),
       "lastLogin": Date.now(),
-      "files": [],
-      "displayname": username,
-      "pref": {
-        "sound": !($('.audio-button').hasClass('mute')),
-        "background": ""
-      },
-      "email": ""
+      "displayName": username,
+      "email": "",
+      current: true
     };
-    userObj.files.push({
-      fileID: 'file-0000000000002',
-      filename: 'License and Credits',
-      content: `
-              <h3>License</h3><br><br>The Windows 98 name, interface, and sample audio files are a property of Microsoft Corporation, the code within this project is released under the [MIT License].<br><br>The MIT License (MIT)<br><br>Copyright (c) [2025] [Rahul Mehra]<br><br>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br><br>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br><br>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.<br><br><h3>Credits :</h3><br>Wolf3d - https://github.com/jseidelin/wolf3d<br>Clippy - https://github.com/smore-inc/clippy.js<br>Winamp2 - https://github.com/captbaritone/winamp2-js<br><br>Please see their respective licenses.
-      `,
-      'type': 'doc',
-      'program': 'msword',
-      'creationDate': 1476970200000,
-      'modifiedDate': 1476970200000
-    })
-    users.users.push(userObj)
-    localStorage.setItem('users', JSON.stringify(users));
-    localStorage.setItem('currentUser', JSON.stringify(userObj));
+    const userId = await db.users.add(userObj);
+    this.setCurrentUser(userId);
   }
-  setExistingUser(username) {
-    const users = JSON.parse(localStorage.getItem('users'));
-    let currentUser: User | undefined;
-    $.each(users.users, (_k, v) => {
-      if (v.username === username) {
+  
+  async setCurrentUser(id: number) {
+    await db.users.filter((user) => user.current).modify({ current: false });
+    await db.users.update(id, { current: true });
+  }
 
-        v.lastLogin = Date.now();
-        v.pref.sound = !($('.audio-button').hasClass('mute'));
-        currentUser = v;
-        return false;
-      }
+  async setExistingUser(currentUser: User) {
+    const pref = await db.userPreferences.get({ userId: currentUser.id, key: 'sound' });
+    if (!pref) {
+      await this.createNewSoundPref(currentUser);
+    }
+    await db.users.update(currentUser, {
+      lastLogin: currentUser.lastLogin,
     });
-    localStorage.setItem('users', JSON.stringify(users));
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
   }
-  firstVisit() {
-    const userObj = {
-      "users": []
+  private async createNewSoundPref(currentUser: User) {
+    if (!currentUser.id) {
+      throw new Error('Current user ID is not defined');
+    }
+    const soundPref = {
+      userId: currentUser.id,
+      key: 'sound',
+      value: 'false'
     };
-    localStorage.setItem('users', JSON.stringify(userObj));
-    return true;
+    await db.userPreferences.add(soundPref);
+  }
+
+  async firstVisit() {
+    debugger;
+    if (!(await db.files.get({ id: 1 }))) {
+      debugger;
+      await db.files.add({
+        id: 1,
+        filename: "License and Credits",
+        content: `
+              <h3>License</h3><br><br>The Windows 98 name, interface, and sample audio files are a property of Microsoft Corporation, the code within this project is released under the [MIT License].<br><br>The MIT License (MIT)<br><br>Copyright (c) [2025] [Rahul Mehra]<br><br>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br><br>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br><br>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.<br><br><h3>Credits :</h3><br>Wolf3d - https://github.com/jseidelin/wolf3d<br>Clippy - https://github.com/smore-inc/clippy.js<br>Winamp2 - https://github.com/captbaritone/winamp2-js<br><br>Please see their respective licenses.
+    `,
+        extension: "doc",
+        type: "doc",
+        program: "msword",
+        creationDate: 1476970200000,
+        modifiedDate: 1476970200000,
+        static: true
+      });
+    }
   }
   setup() {
     //log('called1');

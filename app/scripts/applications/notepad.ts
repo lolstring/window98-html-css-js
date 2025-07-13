@@ -1,30 +1,28 @@
 import Webamp from 'webamp/lazy';
 import { Kernel } from '../kernel';
-import { Application } from './application';
+import { Application, type ApplicationConstruct } from './application';
 
 export class Notepad extends Application {
-  fileID?: string;
+  fileID?: number;
 
-  constructor(processID: number, fileID: string) {
+  constructor(processID: number, fileID: number | undefined) {
     super(processID);
     this.fileID = fileID;
-    const { windowID, description } = this.create();
-    this.windowID = windowID;
-    this.description = description;
   }
+
   saveListener() {
     const doc = $(`[pid="${this.processID}"] .document-wrap`);
     const contents = $(doc).html();
-    $(doc).blur(function () {
+    $(doc).on('blur', function () {
       if (contents !== $(this).html()) {
         $(this).closest('div[pid]').attr('saved', "false");
       }
     });
 
   }
-  create() {
+  async create(): Promise<ApplicationConstruct> {
     //let notepadID = 'notepad-' + processID;
-    let file: { filename: string; content: string; type: any; };
+    let file: { filename: string; content: string; type: string; } | undefined;
     let description: string;
     let content: string;
     let filename: string;
@@ -32,11 +30,18 @@ export class Notepad extends Application {
     if (this.fileID) {
       //log(this.fileID);
       //var file = this.filename.split('.');
-      file = Kernel.getFileFromLocal(this.fileID);
-      description = `${file.filename} - Notepad`;
-      content = file.content;
-      filename = file.filename;
-      type = file.type;
+      file = await Kernel.getFileFromLocal(this.fileID);
+      if (file) {
+        description = `${file.filename} - Notepad`;
+        content = file.content;
+        filename = file.filename;
+        type = file.type;
+      } else {
+        description = 'Untitled - Notepad';
+        content = '<div class="clear"></div>';
+        filename = 'Unitled';
+        type = '';
+      }
     } else {
       description = 'Untitled - Notepad';
       content = '<div class="clear"></div>';
@@ -44,12 +49,14 @@ export class Notepad extends Application {
       type = '';
     }
     const a = this.append(filename, content, type, description);
+    this.windowID = a.windowID;
+    this.description = a.description;
     this.saveListener();
     //SystemUI.setWindowPosition(a);
     return a;
   }
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  append(filename: string, content: string, _type: any, description: string) {
+  append(filename: string, content: string, _type: any, description: string): ApplicationConstruct {
     const cd = 'contenteditable="true"';
     const notepadData = `<div id="notepad-${this.processID}" class="notepad window ui-widget-content" pid="${this.processID}" program-name="notepad" fileID=${this.fileID} saved="true">
             <div class="window-border">

@@ -1,14 +1,8 @@
 import Webamp from "webamp/lazy";
-import { Application } from './application';
+import { Application, type ApplicationConstruct } from './application';
 
 export class Winamp extends Application {
-  constructor(processID) {
-    super(processID);
-    const { windowID, description } = this.create();
-    this.windowID = windowID;
-    this.description = description;
-  }
-  create() {
+  create(): ApplicationConstruct {
     const webamp = new Webamp({
       initialTracks: [
                 {
@@ -34,13 +28,20 @@ export class Winamp extends Application {
               requireJSZip: () => Promise.resolve(),
               requireMusicMetadata: () => Promise.resolve(),
     });
-    return this.append(webamp);
+
+    const construct = this.append(webamp);
+    this.windowID = construct.windowID;
+    this.description = construct.description;
+    return construct;
   }
   
-  append(webamp) {
+  append(webamp: Webamp): ApplicationConstruct {
     const winampData = `<div id='winamp2-js' class="winamp window" tabindex="-1" program-name="winamp" pid="${this.processID}"></div>`;
     $(winampData).appendTo('#desktop').show('fast');
-    webamp.renderWhenReady(document.getElementById('winamp2-js'));
+    const winampElement = document.getElementById('winamp2-js');
+    if (winampElement) {
+      webamp.renderWhenReady(winampElement);
+    }
     $('#winamp2-js').draggable({
       handle: '.title-bar'
     });

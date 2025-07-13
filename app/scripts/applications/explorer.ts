@@ -1,24 +1,26 @@
 import { Kernel } from "../kernel";
 import { ProgramData } from "../program-data";
-import { Application } from './application';
+import { Application, type ApplicationConstruct } from './application';
 
 export class Explorer extends Application {
     directory: string;
-    constructor(processID, directory) {
+    constructor(processID: number, directory: string) {
         super(processID);
         this.directory = directory;
-        const { windowID, description } = this.create();
-        this.windowID = windowID;
-        this.description = description;
     }
-    create() {
-        const a = this.append();
+    async create(): Promise<ApplicationConstruct> {
+        const a = await this.append();
+        this.windowID = a.windowID;
+        this.description = a.description;
         return a;
     }
-    append() {
-        const e = Kernel.getFileFromLocal('file-0000000000002');
+    async append(): Promise<ApplicationConstruct> {
+        const e = await Kernel.getFileFromLocal(2);
+        if (!e) {
+            throw new Error('File not found for explorer.');
+        }
         const iconURL = ProgramData.getIconByType(e.type);
-        const iconData = `<div class="folder-icon user-file" tabindex="0" fileID="${e.fileID}" program-name="${e.program}" type="${e.extension}" style="background:url(${iconURL}) no-repeat center top;background-size: 32px; "><p class="text" style="text-align:center;"><span>${e.filename}</span></p></div>`;
+        const iconData = `<div class="folder-icon user-file" tabindex="0" fileID="${e.id}" program-name="${e.program}" type="${e.extension}" style="background:url(${iconURL}) no-repeat center top;background-size: 32px; "><p class="text" style="text-align:center;"><span>${e.filename}</span></p></div>`;
         const b = this.getDirectoryContents();
         const explorerData = `<div id="explorer-${this.processID}" class="explorer window ui-widget-content" program-name="explorer" pid="${this.processID}" directory="${this.directory}">
             <div class="window-border">

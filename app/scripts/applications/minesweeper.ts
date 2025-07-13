@@ -1,16 +1,14 @@
-import { Application } from './application';
+import { Application, type ApplicationConstruct } from './application';
 
-export class Minesweeper extends Application{
-  constructor(processID) {
-    super(processID);
-    const {windowID, description} = this.create();
-    this.windowID = windowID;
-    this.description = description;
+export class Minesweeper extends Application {
+  
+  create(): ApplicationConstruct {
+    const construct = this.append();
+    this.windowID = construct.windowID;
+    this.description = construct.description;
+    return construct;
   }
-  create() {
-    return this.append();
-  }
-  append() {
+  append(): ApplicationConstruct {
     const minesweeperData = ` <div id="minesweeper" class="window ui-widget-content" style="display:block;" program-name="minesweeper" pid = "${this.processID}">
               <div class="window-border">
               <div class="title-bar  h-count" id="parent">
