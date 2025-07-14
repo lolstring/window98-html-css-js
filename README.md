@@ -2,9 +2,9 @@
 
 This project is a recreation of the Windows 98 desktop experience, built for the browser. It is a LEGACY project that uses older technologies, including jQuery, and retains the original coding patterns from when it was first developed. Please note that this is a personal portfolio piece and is not currently seeking contributions.
 
-**Live version can be viewed at [rahul.io](https://rahul.io).**
 
-![Screenshot](https://raw.githubusercontent.com/lolstring/windows98-html-css-js/master/assets/screenshot-min.png)
+### Live version can be viewed at - [rahul.io](https://rahul.io).
+![Screenshot](https://raw.githubusercontent.com/lolstring/window98-html-css-js/refs/heads/master/assets/screenshot-min.png)
 
 ## Built With
 
