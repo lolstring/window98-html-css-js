@@ -15,7 +15,7 @@ export class Explorer extends Application {
         return a;
     }
     async append(): Promise<ApplicationConstruct> {
-        const e = await Kernel.getFileFromLocal(2);
+        const e = await Kernel.getFileFromLocal(1);
         if (!e) {
             throw new Error('File not found for explorer.');
         }

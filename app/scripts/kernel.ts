@@ -1,4 +1,4 @@
-import type { User, UserFile } from 'application';
+import type { UserFile } from 'application';
 import db from './storage';
 
 export class Kernel {
@@ -10,12 +10,14 @@ export class Kernel {
   async reset() {
     await db.msWordCounter.clear();
     await db.processes.clear();
-    await db.users.where('current').equals('true').modify({ current: false });
   }
 
   static async getFileFromLocal(fileID: number): Promise<UserFile | undefined> {
     const userId = (await db.users.filter((user) => user.current).first())?.id;
-    const file = await db.files.where({ id: fileID, userId }).first();
+    if (!userId) {
+      return;
+    }
+    const file = await db.files.filter((file) => file.id === fileID && (file.userId === userId || file.static)).first();
     return file;
   }
 }

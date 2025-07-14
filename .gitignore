@@ -16,3 +16,4 @@ app/vendor/setasign
 app/vendor/composer
 npm-debug.log
 .history/
+.env

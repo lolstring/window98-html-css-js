@@ -9,10 +9,7 @@ import db from './storage';
 
 export class Login {
   constructor() {
-    //this.greetings();
     this.eventListeners();
-    this.login();
-    //this.lols();
   }
   async greetings() {
     /**
@@ -103,7 +100,6 @@ export class Login {
     const username: string = ($('#username').val()?.toString() || 'Rahul');
     const usersExist = await db.users.count() > 0;
     const user = await db.users.where('username').equalsIgnoreCase(username).first();
-
     if (usersExist) {
       if (user) {
         await this.setExistingUser(user);
@@ -136,8 +132,12 @@ export class Login {
   }
   
   async setCurrentUser(id: number) {
-    await db.users.filter((user) => user.current).modify({ current: false });
-    await db.users.update(id, { current: true });
+    await db.users.each(user => {
+      user.current = false;
+      if (user.id === id) {
+        user.current = true;
+      }
+    });
   }
 
   async setExistingUser(currentUser: User) {
@@ -148,6 +148,7 @@ export class Login {
     await db.users.update(currentUser, {
       lastLogin: currentUser.lastLogin,
     });
+    this.setCurrentUser(currentUser.id);
   }
   private async createNewSoundPref(currentUser: User) {
     if (!currentUser.id) {
@@ -162,9 +163,7 @@ export class Login {
   }
 
   async firstVisit() {
-    debugger;
     if (!(await db.files.get({ id: 1 }))) {
-      debugger;
       await db.files.add({
         id: 1,
         filename: "License and Credits",

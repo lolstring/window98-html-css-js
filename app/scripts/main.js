@@ -4,7 +4,6 @@ import 'jquery-ui/dist/jquery-ui';
 
 import '../styles/mod.scss';
 
-
 import './polyfill';
 import { startTime } from './util';
 import './jquery-extension';
@@ -13,12 +12,12 @@ import './kernel';
 import { Bot } from './bot';
 import { Login } from './login';
 import './sound';
+import './analytics';
 
 // Initialize the application
-
-function main() {
-  new Login();
-
+async function main() {
+  const login = new Login();
+  await login.login();
   //ui.windowInitalPositionValues();
 }
 window.globalBot = new Bot($('body'));
