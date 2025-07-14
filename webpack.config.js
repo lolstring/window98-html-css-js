@@ -7,6 +7,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const ImageMinimizerPlugin = require('image-minimizer-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const ProvidePlugin = require('webpack').ProvidePlugin;
+const Dotenv = require('dotenv-webpack');
 
 module.exports = {
   entry: {
@@ -107,7 +108,8 @@ module.exports = {
     new ProvidePlugin({
       $: "jquery",
       jQuery: "jquery"
-    })
+    }),
+    new Dotenv()
   ],
   optimization: {
     minimizer: [

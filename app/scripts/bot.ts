@@ -1,8 +1,9 @@
 import type { ClippyAgent } from 'clippy';
-import clippy from "../installed-programs/clippy/build/clippy";
+import clippy from 'clippyjs';
+
 import $ from "jquery";
 
-
+window.CLIPPY_CDN = '/installed-programs/clippy/agents/';
 export class Bot {
   _el: JQuery<HTMLElement>;
   _agentDfd: JQuery.Deferred<ClippyAgent> | null;
@@ -60,6 +61,7 @@ export class Bot {
   _switchAgentInternal(newAgent: string): JQuery.Promise<any> {
     this._agentDfd = $.Deferred();
     clippy.load(newAgent, $.proxy(this._onAgentReady, this));
+    window.clippy = clippy;
     return this._agentDfd.promise();
   }
 
