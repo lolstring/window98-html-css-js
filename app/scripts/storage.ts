@@ -10,10 +10,6 @@ const db = new Dexie("Win98") as Dexie & {
 };
 
 db.version(1).stores({
-  // users: "++id, username, creationDate, lastLogin, displayName, email, current",
-  // userPreferences: "++id, userId, key, value",
-  // files: "++id, userId, filename, content, program, type, extension, creationDate, modifiedDate",
-  // processes: "++id, processID, program, windowID, description, active",
   files: '++id, fileId, userId, filename, program, type, extension, creationDate, modifiedDate',
   users: '++id, &username, &email, displayName, creationDate, lastLogin',
   userPreferences: '++id, userId, key, [userId+key]',
@@ -21,4 +17,7 @@ db.version(1).stores({
   msWordCounter: "++id",
 });
 
+db.version(2).stores({
+  users: '++id, &username, displayName, creationDate, lastLogin',
+})
 export default db;

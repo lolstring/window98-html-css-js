@@ -13,11 +13,21 @@ export class Kernel {
   }
 
   static async getFileFromLocal(fileID: number): Promise<UserFile | undefined> {
-    const userId = (await db.users.filter((user) => user.current).first())?.id;
-    if (!userId) {
+    const user = await Kernel.getCurrentUser();
+    if (!user || !user.id) {
       return;
     }
-    const file = await db.files.filter((file) => file.id === fileID && (file.userId === userId || file.static)).first();
+    const file = await db.files.filter((file) => file.id === fileID && (file.userId === user.id || file.static)).first();
     return file;
+  }
+
+  static async getCurrentUser() {
+    if (db.isOpen()) {
+      const user = await db.users.filter((user) => user.current).first().catch((err) => {
+        console.error('Error fetching current user:', err);
+        return undefined;
+      });
+      return user;
+    }
   }
 }

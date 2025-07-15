@@ -8,6 +8,9 @@ import db from './storage';
 
 
 export class Login {
+  init = false;
+  ui: SystemUI | undefined;
+  kernel: Kernel | undefined;
   constructor() {
     this.eventListeners();
   }
@@ -33,17 +36,19 @@ export class Login {
 
   }
   eventListeners() {
-    $('#login').off().on('click', '.close,.cancel', () => {
-      this.login();
+    $('#login').off().on('click', '.close,.cancel', async () => {
+      await this.login();
     })
-    $('#login').off().on('click', '.ok-button', (e) => {
+    $('#login').off().on('click', '.ok-button', async (e) => {
       e.stopPropagation();
       e.preventDefault();
-      this.login();
+      const username = $('#username').val()?.toString();
+      await this.login(username);
     })
     $('.audio-button').off().on('click', () => {
+      const currentState = !$('.audio-button').hasClass('mute');
       $('.audio-button').toggleClass('mute');
-      Sound.toggleSound();
+      Sound.toggleSound(!currentState);
     })
     $(window).on('load', () => {
       this.greetings();
@@ -96,9 +101,10 @@ export class Login {
     ]
   }
    */
-  async login() {
-    const username: string = ($('#username').val()?.toString() || 'Rahul');
+  async login(usernameStr?: string) {
     const usersExist = await db.users.count() > 0;
+    const currentUser = await Kernel.getCurrentUser();
+    const username = usernameStr || currentUser?.username || "Rahul";
     const user = await db.users.where('username').equalsIgnoreCase(username).first();
     if (usersExist) {
       if (user) {
@@ -111,6 +117,7 @@ export class Login {
       await this.addNewUser(username);
     }
     this.setup();
+    $('.username').text(username);
     // } else {
     //   console.log('No Storage');
     //   $('#login').css('display', 'none');
@@ -124,42 +131,32 @@ export class Login {
       "creationDate": Date.now(),
       "lastLogin": Date.now(),
       "displayName": username,
-      "email": "",
       current: true
     };
     const userId = await db.users.add(userObj);
     this.setCurrentUser(userId);
   }
   
+  async setAllCurrentUsersToFalse() {
+    await db.users.toCollection().modify({current: false});
+  }
+
   async setCurrentUser(id: number) {
-    await db.users.each(user => {
-      user.current = false;
-      if (user.id === id) {
-        user.current = true;
-      }
-    });
+    this.setAllCurrentUsersToFalse();
+    await db.users.update(id, {current: true});
   }
 
   async setExistingUser(currentUser: User) {
     const pref = await db.userPreferences.get({ userId: currentUser.id, key: 'sound' });
     if (!pref) {
-      await this.createNewSoundPref(currentUser);
+      await Sound.createNewSoundPref(currentUser);
     }
     await db.users.update(currentUser, {
       lastLogin: currentUser.lastLogin,
+      current: true,
     });
-    this.setCurrentUser(currentUser.id);
-  }
-  private async createNewSoundPref(currentUser: User) {
-    if (!currentUser.id) {
-      throw new Error('Current user ID is not defined');
-    }
-    const soundPref = {
-      userId: currentUser.id,
-      key: 'sound',
-      value: 'false'
-    };
-    await db.userPreferences.add(soundPref);
+
+    await this.setCurrentUser(currentUser.id);
   }
 
   async firstVisit() {
@@ -180,21 +177,26 @@ export class Login {
     }
   }
   setup() {
-    //log('called1');
-    const k = new Kernel();
-    k.store();
-
-    const ui = new SystemUI();
-    ui.init();
-    ui.eventListeners();
-    ui.setDesktop();
+    this.ui;
+    this.kernel;
+    if (!this.init && !this.ui) {
+      //log('called1');
+      this.kernel = new Kernel();
+      this.ui = new SystemUI();
+      this.ui.eventListeners();
+      this.init = true;
+    } 
+    if (this.ui)  {
+      this.ui.init();
+      this.ui.setDesktop();
+    }
+    if (this.kernel) {
+      this.kernel.store();
+    }
     $('#login').css('display', 'none');
     $('#desktop').css('display', 'block');
-    if (!($('.audio-button').hasClass('mute'))) {
-      $('#clock > .volume').attr('src', 'images/win98_icons/volume.ico');
-    } else {
-      $('#clock > .volume').attr('src', 'images/win98_icons/volumemute.ico');
-    }
+    $("#desktop").css("pointer-events", "auto");
+    Sound.setInitialState();
     // sound.play('sprite8');
   }
   loaded() {

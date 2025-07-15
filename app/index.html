@@ -8,7 +8,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=0.5">
     <title>Windows 98 on the Web</title>
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <link rel="stylesheet" href="styles/jquery-ui.css">
     <!-- mod.css will be injected by Webpack via JS import -->
     <link rel="stylesheet" href="installed-programs/clippy/build/clippy.css" media="all">
     <!-- Webpack will inject vendor and main JS bundles automatically -->
@@ -44,11 +43,12 @@
                 <div class="login-form">
                     <div class="bottom-bar">
                         <p class="text">User name: </p>
-                        <input type="text" id="username" class="filename" style="position:relative;">
+                        <input type="text" id="username" value="Rahul" class="filename" style="position:relative;">
                     </div>
                     <div class="bottom-bar">
                         <p class="text">Password:</p>
-                        <input type="text" id="password" class="filename" style="position:relative; margin-left:5px;">
+                        <input type="password" id="password" value="password" class="filename"
+                            style="position:relative; margin-left:5px;">
                     </div>
                 </div>
             </div>
@@ -1158,7 +1158,7 @@
                     </div>
                     <hr>
                     <div class="menu-item" id="menu-9"><img class="icon" src="images/win98_icons/key_win.ico" />
-                        <div class="text"><u>L</u>og off Rahul...</div><br>
+                        <div class="text"><u>L</u>og off <span class="username">Rahul</span>...</div><br>
                     </div>
                     <div class="menu-item" id="menu-10"><img class="icon" src="images/win98_icons/shut_down_cool.ico" />
                         <div class="text">Sh<u>u</u>t Down...</div><br>

@@ -1,4 +1,7 @@
 import { Howl } from 'howler';
+import db from './storage';
+import { Kernel } from './kernel';
+import { User } from 'application';
 
 interface SpriteMap {
   [key: string]: string;
@@ -10,7 +13,9 @@ interface SoundInterface {
     sprite: { [key: string]: [number, number] | [number, number, boolean]; };
     spriteMap: SpriteMap;
   };
-  toggleSound(): void;
+  createNewSoundPref(currentUser: User): Promise<void>;
+  setInitialState(): Promise<void>;
+  toggleSound(desiredState: boolean): void;
   play(key: keyof typeof Sound.options.spriteMap): void;
 }
 
@@ -40,55 +45,85 @@ export const Sound: SoundInterface = {
       sprite8: 'TMS'
     }
   },
-  toggleSound(): void {
-    const userString = localStorage.getItem('currentUser');
-    if (userString === null) {
-      console.error('currentUser not found in localStorage');
+
+  async setInitialState() {
+    const user = await Kernel.getCurrentUser();
+    if (!user) {
+      console.error('Current user not found');
       return;
     }
-    const user = JSON.parse(userString);
-    user.pref.sound = !($('.audio-button').hasClass('mute'));
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    const userPref = await db.userPreferences.get({ userId: user.id, key: 'sound' });
+    let state = false;
+    if (!userPref) {
+      await this.createNewSoundPref(user);
+      state = false;
+    }
+    if (userPref?.value === 'true') {
+      state = true;
+    }
+    if (state) {
+      $('.audio-button').removeClass('mute');
+    } else {
+      $('.audio-button').addClass('mute');
+    }
+  },
+  async toggleSound(desiredState = true): Promise<void> {
+    const user = await Kernel.getCurrentUser();
+    if (!user) {
+      console.error('currentUser not found');
+      return;
+    }
+    const userPref = await db.userPreferences.get({ userId: user.id, key: 'sound' });
+    const userStoredValue = userPref?.value === 'true' || false;
+    if (userStoredValue === desiredState) {
+      console.log('Sound already in desired state');
+    }
+    if (desiredState) {
+      console.log('Enabling sound');
+      await db.userPreferences.put({ userId: user.id, key: 'sound', value: 'true' });
+    } else {
+      console.log('Disabling sound');
+      await db.userPreferences.put({ userId: user.id, key: 'sound', value: 'false' });
+    }
     if ($('.window[program-name="wolf-3d"]').length !== 0) {
-      if (!($('.audio-button').hasClass('mute'))) {
-        console.log('Sound Enabled');
-        (((document.getElementById("wolf-frame") as HTMLIFrameElement)
-          // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-          ?.contentWindow) as unknown as Window & { Wolf: any }
-        ).Wolf.Sound.toggle("enable");
-      } else {
-        console.log('Sound Disabled');
-        (((document.getElementById('wolf-frame') as HTMLIFrameElement)
-          // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-          ?.contentWindow) as unknown as Window & { Wolf: any }
-        ).Wolf.Sound.toggle();
-      }
+      console.log('Sound Enabled');
+      (((document.getElementById("wolf-frame") as HTMLIFrameElement)
+        // biome-ignore lint/suspicious/noExplicitAny: External program
+        ?.contentWindow) as unknown as Window & { Wolf: any }
+      ).Wolf.Sound.toggle(desiredState ? "enable" : "disable");
     }
     // if($('.window[program-name="wolf-3d"]').length != 0) {
     // 			document.getElementById('wolf-frame').contentWindow.Wolf.Sound.toggle();
     // }
   },
-  play(key: keyof typeof Sound.options.spriteMap): void {
-    const currentUserString = localStorage.getItem('currentUser');
-    if (currentUserString === null) {
-      console.error('currentUser not found in localStorage');
-      return;
-    }
-    const currentUser = JSON.parse(currentUserString);
+  async play(key: keyof typeof Sound.options.spriteMap) {
+    const currentUser = await Kernel.getCurrentUser();
+    let playSound = false;
+    if (currentUser) {
+      const userPref = await db.userPreferences.filter((pref) => pref.userId === currentUser.id && pref.key === 'sound').first();
 
-    if (currentUser.pref.sound === true) {
-      // Setup the options to define this sprite display.
-      const _spriteMap: SpriteMap = Sound.options.spriteMap;
+      if (userPref?.value === 'true') {
+        playSound = true;
+      }
+    }
+    if (playSound) {
       const howl = new Howl({
         src: Sound.options.urls,
-        sprite: Sound.options.sprite
+        sprite: Sound.options.sprite,
       });
-      const sprite = _spriteMap[key];
-
-      // Play the sprite sound and capture the ID.
+      const sprite = Sound.options.spriteMap[key];
       howl.play(sprite);
-    } else {
-      //log('No sound');
     }
+  },
+  async createNewSoundPref(currentUser: User) {
+    if (!currentUser.id) {
+      throw new Error('Current user ID is not defined');
+    }
+    const soundPref = {
+      userId: currentUser.id,
+      key: 'sound',
+      value: 'false'
+    };
+    await db.userPreferences.add(soundPref);
   }
 }

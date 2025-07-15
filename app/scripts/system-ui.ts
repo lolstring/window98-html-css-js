@@ -541,7 +541,7 @@ export class SystemUI extends ProcessManager {
 							const { width, height } = getWindowDimensions();
 							a.moveTo(width * 0.75, height * 0.75);
 							a.speak(
-								"This is Microsoft Word. You can edit files and save them to the desktop which is internally stored to Local Storage. Be careful when you clear cache. You can also download the file to your own computer.",
+								"This is Microsoft Word. You can edit files and save them to the desktop which is internally stored in your browser. You can also download the file to your own computer.",
 							);
 						});
 						this.botWord = true;
@@ -1204,14 +1204,14 @@ export class SystemUI extends ProcessManager {
 		}
 	}
 	beforeFinalShutdown(shut: string): void {
-		this.beforeSystemClose("shutdown", (e: boolean) => {
+		this.beforeSystemClose("shutdown", async (e: boolean) => {
 			if (e) {
 				if (shut === "shutdown") {
 					this.finalShutdown();
 				} else if (shut === "restart") {
 					this.restart();
 				} else if (shut === "logoff") {
-					this.logoff();
+					await this.logoff();
 				}
 			} else {
 				$("#shutdown").css("display", "none");
@@ -1326,6 +1326,9 @@ export class SystemUI extends ProcessManager {
 
 	async destroySession() {
 		await db.delete();
+		setTimeout(() => {
+			location.reload();
+		}, 0);
 	}
 	//------------------------------------Log off---------------------------------------------------//
 
@@ -1353,11 +1356,12 @@ export class SystemUI extends ProcessManager {
 			$(parentSel).css("zIndex", "2147483646");
 			const d = $(this).attr("value");
 			if (d === "yes") {
-				self.beforeSystemClose("logoff #dialog", (e: boolean) => {
+				self.beforeSystemClose("logoff #dialog", async (e: boolean) => {
 					if (e) {
 						if (destroySession) {
 							self.destroySession();
 						}
+						$("#logoff").css("display", "none");
 						self.logoff();
 						SystemUI.removeOverlay();
 					} else {
@@ -1374,20 +1378,20 @@ export class SystemUI extends ProcessManager {
 			$("#logoff p").text("Are you sure you want to logoff?");
 		});
 	}
-	logoff(): void {
+	async logoff(): Promise<void> {
 		Sound.play("sprite3");
-		setTimeout(() => {
-			location.reload();
-		}, 4000);
+		// setTimeout(() => {
+		// 	location.reload();
+		// }, 4000);
 
 		// var src="scripts/es2015.js";
 		// $('script[src="' + src + '"]').remove();
 		//      	$('<script>').attr('src', src).appendTo('head');
-		// $('#desktop').css('display','none');
-		// $('#desktop-icons .user-file').remove();
-		// $('#desktop .window').remove();
-		// $('.window-open').remove();
-		// $('#login').css('display','block');
+		$('#desktop').css('display','none');
+		$('#desktop-icons .user-file').remove();
+		$('#desktop .window').remove();
+		$('.window-open').remove();
+		$('#login').css('display','block');
 	}
 	//---------------------------------------------RUN _--------------------------------//
 	runInit(): void {
@@ -1723,15 +1727,7 @@ export class SystemUI extends ProcessManager {
 		return files;
 	}
 	private async getCurrentUser() {
-		return await db.users
-			.filter((user) => {
-				return user.current;
-			})
-			.first()
-			.catch((err) => {
-				console.error("Error fetching current user:", err);
-				return undefined;
-			});
+		return await Kernel.getCurrentUser();
 	}
 
 	async getFileFromLocal(fileID: number): Promise<UserFile | undefined> {

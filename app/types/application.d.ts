@@ -20,7 +20,6 @@ export type User = {
   creationDate: number;
   lastLogin: number;
   displayName: string;
-  email: string;
   current: boolean;
 }
 
