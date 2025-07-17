@@ -1,0 +1,15 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "posthog-reverse-proxy",
+  "compatibility_date": "2024-07-17",
+  "main": "index.js",
+  "vars": {
+    "DOMAIN_WHITE_LIST": "rahul.io"
+  },
+  "workers_dev": false,
+  "routes": [{
+    "custom_domain": true,
+    "pattern": "stats-cf-rp.rahul.io",
+    "zone_name": "rahul.io"
+  }]
+}

@@ -12,10 +12,11 @@ import './kernel';
 import { Bot } from './bot';
 import { Login } from './login';
 import './sound';
-import './analytics';
+import { initPostHog } from './analytics';
 
 // Initialize the application
 async function main() {
+  initPostHog();
   const login = new Login();
   await login.login();
   //ui.windowInitalPositionValues();
