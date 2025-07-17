@@ -13,15 +13,11 @@ export async function initPostHog() {
       mode: "no-cors",
     })
     if (!r.ok) {
-      console.error("Error fetching PostHog API URL:", r.statusText);
-      console.error("Using default PostHog API URL:", POSTHOG_DEFAULT_API_URL);
       posthogApiUrl = POSTHOG_API_URL;
     }
     if (POSTHOG_API_URL) {
-      console.log('here');
       posthogApiUrl = POSTHOG_API_URL;
     }
-    console.log("Initializing PostHog with API:", posthogApiUrl);
     if (posthogApiUrl) {
       posthog.init(POSTHOG_KEY, {
         api_host: posthogApiUrl,

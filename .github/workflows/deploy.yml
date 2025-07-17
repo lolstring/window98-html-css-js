@@ -13,6 +13,7 @@ jobs:
       deployments: write
     env:
       POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+      POSTHOG_API_URL: ${{ vars.POSTHOG_API_URL }}
     steps:
       - name: Create deployment status
         uses: bobheadxi/deployments@v1
