@@ -109,7 +109,9 @@ module.exports = {
       $: "jquery",
       jQuery: "jquery"
     }),
-    new Dotenv()
+    new Dotenv({
+      systemvars: true
+    })
   ],
   optimization: {
     minimizer: [
